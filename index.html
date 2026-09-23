@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>منظم اختبارات الأكاديمية</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f7f4f8;color:#222;font-family:Tahoma,Arial,sans-serif}
+header{background:linear-gradient(135deg,#71358b,#a95dbb);color:#fff;text-align:center;padding:20px}
+header h1{margin:0 0 8px;font-size:23px}
+.container{max-width:1100px;margin:auto;padding:14px}
+.card,.result{background:#fff;border-radius:16px;padding:17px;margin-bottom:16px;box-shadow:0 3px 14px #00000012}
+h2{color:#71358b;margin:0 0 10px;font-size:19px}
+.small{font-size:12px;color:#777;line-height:1.7}
+textarea,input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;font:inherit}
+textarea{min-height:160px;resize:vertical}
+button{border:0;border-radius:10px;padding:11px 15px;font:inherit;font-weight:bold;cursor:pointer}
+.btn{background:#71358b;color:#fff}.green{background:#218653;color:#fff}.gray{background:#ebe8ed}.red{background:#c53d49;color:#fff}
+.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px}
+.box{border:1px solid #e1dce3;border-radius:11px;padding:12px;background:#fcfbfc}
+.teacher-name{font-weight:bold;color:#71358b}
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;background:#eee;font-size:11px;margin-top:5px}
+.qalun{background:#fff0ce;color:#936000}.hafs{background:#e7f5ed;color:#167043}
+.checks{max-height:350px;overflow:auto;border:1px solid #ddd;border-radius:10px;padding:5px}
+.check{display:flex;gap:8px;align-items:center;padding:9px;border-bottom:1px solid #eee}
+.check input{width:auto}
+.success{color:#177844;font-weight:bold}.warning{color:#9a6500;font-weight:bold}.error{color:#b4232c;font-weight:bold}.status{margin-top:10px;padding:9px 12px;border-radius:10px;font-size:13px;font-weight:bold}.status.ok{background:#e8f7ef;color:#177844}.status.warn{background:#fff5dc;color:#8a6200}.status.bad{background:#fdebed;color:#b4232c}
+pre{white-space:pre-wrap;word-break:break-word;direction:rtl;background:#fafafa;border:1px solid #ddd;border-radius:10px;padding:14px;font-family:Tahoma,Arial,sans-serif;line-height:1.65}
+.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:15px;z-index:20}
+.modal-content{background:#fff;border-radius:16px;padding:20px;width:min(650px,100%);max-height:92vh;overflow:auto}
+.hidden{display:none!important}
+.search-result{margin-top:8px;padding:9px;border:1px solid #e6ddea;border-radius:10px;background:#fcf9fd}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px}.stat{background:#f8f4fa;border-radius:10px;padding:9px;text-align:center}.stat b{display:block;font-size:18px;color:#71358b}.hint{font-size:12px;color:#777;margin-top:6px}.review{background:#fbf8fc;border:1px solid #e3d9e8;border-radius:12px;padding:12px;margin-top:10px}.capacity-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #eee}.capacity-row:last-child{border-bottom:0}.locked{opacity:.75}.warning-list{margin:8px 0 0;padding-right:20px}.issue-card{background:#fffaf0;border:1px solid #ead7a0;border-radius:12px;padding:11px;margin-top:8px}.issue-card.error{background:#fff4f4;border-color:#efb5b5}.issue-card .issue-line{background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px;margin:7px 0;direction:rtl;word-break:break-word}.issue-card input,.issue-card select{margin-top:6px}.issue-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.issue-actions button{padding:8px 11px;font-size:12px}
+hr{border:0;border-top:1px solid #eee;margin:15px 0}
+
+#teacherFloatingActions{position:fixed;left:14px;bottom:62px;z-index:5000;display:flex;flex-direction:column;gap:8px;align-items:flex-start}#helpFloating,#addTeacherFloating,#manageTeacherFloating{border:0;border-radius:999px;padding:11px 14px;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:13px;cursor:pointer}#helpFloating{bottom:14px;background:#71358b}#addTeacherFloating{background:#218653}#manageTeacherFloating{background:#5b6472}
+.guide-overlay{position:fixed;inset:0;z-index:6000;display:none;align-items:flex-start;justify-content:center;padding:22px 14px;overflow:auto}.guide-overlay:not(.hidden){display:flex}.guide-overlay.hidden{display:none}.guide-dim{position:absolute;inset:0;background:rgba(20,10,25,.42)}
+.guide-card{position:relative;width:min(520px,96vw);margin-top:4vh;background:#fff;border-radius:18px;padding:17px 18px;box-shadow:0 16px 50px rgba(0,0,0,.3);direction:rtl;text-align:right}.guide-top{display:flex;justify-content:space-between;align-items:center;color:#777;font-size:12px}.guide-close{background:#eee;padding:7px 10px;border-radius:50%}.guide-icon{display:none}.guide-card:after{content:"";position:absolute;right:28px;bottom:-18px;border-width:18px 14px 0;border-style:solid;border-color:#fff transparent transparent transparent}.guide-card h2{text-align:right;margin:2px 0 9px;color:#71358b;font-size:19px}.guide-card p{line-height:1.8;margin:0}.guide-tip{background:#fbf5fd;border-right:4px solid #a95dbb;padding:9px 11px;border-radius:9px;margin-top:12px;font-size:13px;line-height:1.7}.guide-progress{height:5px;background:#eee;border-radius:8px;margin-top:16px;overflow:hidden}.guide-progress span{display:block;height:100%;width:16%;background:#71358b;transition:width .2s}.guide-actions{display:flex;justify-content:space-between;gap:8px;margin-top:14px}.guide-actions button{min-width:100px}.guide-focus{position:relative!important;z-index:6001!important;box-shadow:0 0 0 4px rgba(255,255,255,.95),0 0 0 8px #a95dbb,0 12px 35px rgba(0,0,0,.25)!important;border-radius:14px!important}
+.modal{position:fixed;inset:0;z-index:7000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}.modal.hidden{display:none}.modal-box{width:min(520px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:18px;direction:rtl;text-align:right;box-shadow:0 18px 60px rgba(0,0,0,.3)}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.modal-box label{display:block;margin:9px 0 5px;font-weight:700}.modal-box input,.modal-box textarea{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;font:inherit}.modal-box textarea{min-height:80px;resize:vertical}
+
+/* تم إلغاء شرح الموقع نهائيًا حسب طلب المستخدم */
+#helpFloating,.guide-overlay,.guide-card,.guide-step,.guide-modal{display:none !important;}
+#guide-teachers{display:none !important;}
+</style>
+</head>
+<body>
+
+<header id="guide-header">
+<h1>🌷 منظم اختبارات الأكاديمية 🌷</h1>
+<div>تقسيم الطالبات ومواعيد الاختبار تلقائيًا</div>
+</header>
+
+<div class="container">
+
+<div class="card" id="guide-students">
+<h2>👩‍🎓 1) قائمة الطالبات</h2>
+<p class="small">الصقي القائمة كما تصلك. لو السطر فيه طالبتان، استخدمي 🤝 أو أي فاصل واضح. وإذا كُتبت «قالون» في نهاية السطر فالرواية تُطبق على الطالبتين معًا.</p>
+<textarea id="studentsInput" placeholder="1) أميرة محمد 🤝 نادين غزي
+2) جهاد عبدالقادر 🤝 عبير عبدالقادر
+3) روان السيد 🤝 رنا رمضان قالون"></textarea>
+<div class="buttons">
+<button type="button" class="btn" onclick="parseStudents()">🔍 فصل الطالبات</button>
+<button type="button" class="gray" onclick="clearStudents(event)">🗑️ مسح</button>
+<button type="button" class="gray" onclick="undoInputs()">↩️ تراجع</button>
+</div>
+<div id="studentsStatus" class="status" style="display:none"></div>
+<div id="studentsStats" class="stats" style="display:none"></div>
+<div id="studentIssues"></div>
+<div id="studentsPreview" style="display:none"></div>
+</div>
+
+<div class="card" id="guide-schedule">
+<h2>🕐 2) جدول مواعيد المعلمات</h2>
+<p class="small">الصقي الجدول كما هو. البرنامج يحاول قراءة الوقت حتى لو كان اسم المعلمة بين الوقتين، أو الوقت موزعًا على أكثر من سطر.</p>
+<textarea id="scheduleInput" placeholder="مثال:
+10- أميمة عبد المجيد 11 صباحا
+مرفت 11 صباحًا - 12 ظهرًا
+صابرين شعبان 2 م إلى 3 م"></textarea>
+<div class="buttons">
+<button type="button" class="btn" onclick="parseSchedule()">🔍 تحليل المواعيد</button>
+<button type="button" class="gray" onclick="clearSchedule(event)">🗑️ مسح</button>
+<button type="button" class="gray" onclick="undoInputs()">↩️ تراجع</button>
+</div>
+<div id="scheduleStatus" class="status" style="display:none"></div>
+<div id="scheduleStats" class="stats" style="display:none"></div>
+<div id="scheduleIssues"></div>
+<div id="schedulePreview" style="display:none"></div>
+</div>
+
+<div class="card" id="guide-qalun">
+<h2>📖 3) معلمات طالبات قالون</h2>
+<p class="small">اختاري المعلمات التي تريدين أن تستقبل طالبات قالون في هذا الاختبار.</p>
+<div id="qalunTeachers" class="checks">حللي المواعيد أولًا.</div>
+<div class="buttons">
+<button class="green" onclick="selectAllQalun()">☑ اختيار الكل</button>
+<button class="gray" onclick="clearQalun()">إلغاء الكل</button>
+</div>
+</div>
+
+<div class="card" id="guide-teachers" style="display:none"></div>
+
+<div class="card" id="guide-generate">
+<h2>⚙️ 5) إنشاء القوائم</h2>
+<p class="small">كل طالبة = 5 دقائق. التوزيع متوازن قدر الإمكان، مع احترام سعة كل معلمة، وطالبات قالون لا تذهب إلا للمعلمات المختارات.</p>
+<button class="green" onclick="generateLists()">🌷 إنشاء القوائم</button>
+<button class="gray" onclick="finalCheck()">✅ فحص نهائي</button>
+<div id="finalCheckStatus"></div>
+<div id="reviewPanel"></div>
+<div id="message"></div>
+</div>
+
+<div id="results"></div>
+
+<div id="teacherFloatingActions">
+  <button type="button" id="manageTeacherFloating" onclick="openTeacherManager(); return false;" title="تعديل أو حذف القوالب المحفوظة">⚙️ تعديل / حذف القوالب</button>
+  <button type="button" id="addTeacherFloating" onclick="openTeacher(); return false;" title="إضافة معلمة جديدة">➕ إضافة معلمة جديدة</button>
+</div>
+
+<div id="teacherManagerModal" class="modal hidden">
+  <div class="modal-box" style="max-width:620px">
+    <div class="modal-head"><h3>⚙️ إدارة قوالب المعلمات</h3><button type="button" class="gray" onclick="closeTeacherManager()">✕</button></div>
+    <p class="hint">من هنا يمكنك تعديل أو حذف أي قالب محفوظ. إذا كان القفل مفعّلًا، اضغطي زر فتح التعديل أولًا.</p>
+    <div class="buttons" style="margin-bottom:10px"><button type="button" id="managerLockBtn" class="gray" onclick="toggleTeacherLock(); renderTeacherManager();">🔓 فتح تعديل القوالب</button></div>
+    <input id="teacherManagerSearch" type="text" placeholder="🔎 البحث عن معلمة..." oninput="renderTeacherManager()">
+    <div id="teacherManagerList" style="max-height:55vh;overflow:auto;margin-top:10px"></div>
+  </div>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalTitle">➕ إضافة معلمة جديدة</h3><button type="button" class="gray" onclick="closeTeacher()">✕</button></div>
+    <label>اسم المعلمة</label><input id="tName" type="text" placeholder="مثال: مرفت محمد">
+    <label>رقم الهاتف</label><input id="tPhone" type="text" placeholder="اختياري">
+    <label>تليجرام</label><input id="tTelegram" type="text" placeholder="اختياري">
+    <label>مسنجر</label><input id="tMessenger" type="text" placeholder="اختياري">
+    <label>واتس</label><input id="tWhatsapp" type="text" placeholder="اختياري">
+    <label>ملاحظات</label><textarea id="tNotes" placeholder="اختياري"></textarea>
+    <input id="editId" type="hidden">
+    <div class="buttons"><button type="button" class="green" onclick="saveTeacher()">💾 حفظ المعلمة</button><button type="button" class="gray" onclick="closeTeacher()">إلغاء</button></div>
+  </div>
+</div>
+
+<script>
+const INITIAL_TEACHERS=[
+{name:"منى محمد",phone:"01125615651",telegram:"https://t.me/Monaabdelmaogod",messenger:"https://www.facebook.com/share/1CmCocPoua/",whatsapp:"https://api.whatsapp.com/send?phone=+201125615651"},
+{name:"نسرين يسرى",phone:"+20101116009476",telegram:"https://t.me/Nesreenyosry",messenger:"https://www.facebook.com/share/17qnaWXk48/",whatsapp:"https://api.whatsapp.com/send?phone=+201116009476"},
+{name:"زهره احمد",phone:"01027295922",telegram:"https://t.me/Zahra15880",messenger:"لا يوجد",whatsapp:"https://api.whatsapp.com/send?phone=+201027295922"},
+{name:"مها ناجي",phone:"",telegram:"",messenger:"",whatsapp:"https://chat.whatsapp.com/B8FrOkGrJWeJP29nKK2RAE"},
+{name:"يسرا علي",phone:"01112178243",telegram:"t.me/Yosraalimouhmad",messenger:"https://m.me/yosra.ali.779",whatsapp:"https://api.whatsapp.com/send?phone=+201112178243"},
+{name:"رحاب محمود",phone:"+201060136429\n+201123902656",telegram:"https://t.me/rehab_morsy",messenger:"https://www.facebook.com/share/18ovja4TYg/",whatsapp:"https://api.whatsapp.com/send?phone=+201060136429"},
+{name:"أمل علي",phone:"+201142540322",telegram:"https://t.me/AMALALI123456",messenger:"",whatsapp:"https://api.whatsapp.com/send?phone=+201142540322"},
+{name:"آية عبد الله",phone:"962786234219",telegram:"https://t.me/ayaheliyan",messenger:"https://www.facebook.com/share/1EBXDTJovA/",whatsapp:"https://api.whatsapp.com/send?phone=+962786234219",notes:"غير متاح الاتصال"},
+{name:"عبير أحمد",phone:"+966 59 733 4661",telegram:"https://t.me/ABEER1207",messenger:"https://www.facebook.com/share/1FNvTj48Xt/",whatsapp:"https://api.whatsapp.com/send?phone=+966597334661",notes:"واتس (غير متاح اتصال)"},
+{name:"صفاء رسلان",phone:"01102635910",telegram:"t.me/+201102635910",messenger:"",whatsapp:"https://api.whatsapp.com/send?phone=+201102635910"},
+{name:"منال ناجي",phone:"01115351913",telegram:"https://t.me/Manalnagy",messenger:"https://www.facebook.com/share/19V2WCnZvh/",whatsapp:"https://api.whatsapp.com/send?phone=+201115351913"},
+{name:"سلمى ريدان",phone:"+216 58 469 324",telegram:"",messenger:"",whatsapp:"https://api.whatsapp.com/send?phone=+21658469324"},
+{name:"مروة عصام",phone:"+201099633861",telegram:"https://t.me/MarwaEssamYo",messenger:"https://www.facebook.com/share/16Rne7x1RQ/",whatsapp:"https://api.whatsapp.com/send?phone=+201099633861"},
+{name:"ايمان علي",phone:"+201141712959",telegram:"https://t.me/Emanaliab",messenger:"",whatsapp:"https://api.whatsapp.com/send?phone=+201141712959"},
+{name:"وفاء خليل",phone:"+20 11 41471123",telegram:"t.me/wafaa_khalil_1",messenger:"https://www.facebook.com/wfa.khlyl.998108",whatsapp:"https://api.whatsapp.com/send?phone=+201141471123"},
+{name:"نعمه محمد",phone:"+201113475096",telegram:"https://t.me/Neama_M80",messenger:"https://www.facebook.com/share/1GHxF24mtS/",whatsapp:"https://api.whatsapp.com/send?phone=+201113475096"},
+{name:"أسماء سيد",phone:"+201157511245",telegram:"https://t.me/Asmaa3031994",messenger:"https://www.facebook.com/share/17N3HcTVS9/",whatsapp:"https://api.whatsapp.com/send?phone=+201157511245"},
+{name:"هدي صالح",phone:"+20 10 9154 3593",telegram:"https://t.me/@hodasaleh1972",messenger:"https://www.facebook.com/share/14Qjwaf7mLQ/",whatsapp:"https://api.whatsapp.com/send?phone=+201091543593",notes:"واتس (متاح اتصال)"},
+{name:"صابرين شعبان",phone:"+201119498747",telegram:"t.me/Sabreen27Egypt",messenger:"https://www.facebook.com/share/1DrmvoSaMR/",whatsapp:"https://api.whatsapp.com/send?phone=+201119498747"},
+{name:"فاطمه محمد علي",phone:"+201068874498",telegram:"",messenger:"https://www.facebook.com/share/17atncRwzQ/",whatsapp:"https://api.whatsapp.com/send?phone=+201068874498"},
+{name:"فاطمه ياسين",phone:"00905551744116",telegram:"https://t.me/Fatimaimomar",messenger:"https://www.facebook.com/share/1HE8Uucud9/",whatsapp:"https://wa.me/qr/BM5MRBIB2BO6G1"},
+{name:"أميمه عبد المجيد",phone:"+201007656438",telegram:"https://t.me/+201007656438",messenger:"",whatsapp:"https://api.whatsapp.com/send?phone=+201007656438"},
+{name:"مرفت محمد",phone:"+201025122301\n+201223515966",telegram:"https://t.me/Mervatnu",messenger:"https://www.facebook.com/share/1FHpbSE9a2/",whatsapp:"https://api.whatsapp.com/send?phone=+201223515966"},
+{name:"سعاد محمد",phone:"+218 92-4934043",telegram:"https://t.me/Suadmo20",messenger:"",whatsapp:"https://api.whatsapp.com/send?phone=+218924934043"},
+{name:"سوسن علي",phone:"+201273869460",telegram:"https://t.me/+201117482035",messenger:"https://www.facebook.com/share/1H2AfABwjc/",whatsapp:"https://api.whatsapp.com/send?phone=+201273869460"},
+{name:"يمنى أحمد",phone:"01097271353",telegram:"t.me/+201097271353",messenger:"",whatsapp:"https://api.whatsapp.com/send?phone=+201097271353"},
+{name:"أميره رجب",phone:"01114408851",telegram:"",messenger:"https://www.facebook.com/share/196uXAC3HJ/",whatsapp:"https://api.whatsapp.com/send?phone=+201114408851"}
+];
+
+const KEY="quran_academy_teachers_v3";
+function uid(){return "id_"+Date.now()+"_"+Math.random().toString(36).slice(2)}
+function norm(s){
+return String(s||"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
+.replace(/[ًٌٍَُِّْـ]/g,"").replace(/\s+/g," ").trim().toLowerCase()
+}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function digits(s){return String(s).replace(/[٠-٩]/g,x=>"٠١٢٣٤٥٦٧٨٩".indexOf(x))}
+let teachers=[];
+try{teachers=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){teachers=[]}
+if(!Array.isArray(teachers))teachers=[];
+for(const d of INITIAL_TEACHERS){
+ if(!teachers.some(t=>norm(t.name)===norm(d.name)))teachers.push({id:uid(),...d});
+}
+localStorage.setItem(KEY,JSON.stringify(teachers));
+
+let students=[],schedule=[];
+let studentIssues=[],scheduleIssues=[];
+let lastInputSnapshot=null;
+let teacherTemplatesLocked=localStorage.getItem("quran_teacher_lock_v1")==="1";
+const DRAFT_KEY="quran_exam_drafts_v1";
+function saveDraft(){try{localStorage.setItem(DRAFT_KEY,JSON.stringify({students:document.getElementById("studentsInput")?.value||"",schedule:document.getElementById("scheduleInput")?.value||""}))}catch(e){}}
+function loadDraft(){try{let d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null");if(d){document.getElementById("studentsInput").value=d.students||"";document.getElementById("scheduleInput").value=d.schedule||"";}}catch(e){}}
+function rememberInputs(){lastInputSnapshot={students:document.getElementById("studentsInput")?.value||"",schedule:document.getElementById("scheduleInput")?.value||""}}
+function undoInputs(){if(!lastInputSnapshot){alert("لا يوجد تعديل سابق محفوظ للتراجع إليه.");return}document.getElementById("studentsInput").value=lastInputSnapshot.students;document.getElementById("scheduleInput").value=lastInputSnapshot.schedule;parseStudents();parseSchedule();saveDraft();}
+function setupAutosave(){["studentsInput","scheduleInput"].forEach(id=>{let el=document.getElementById(id);if(el)el.addEventListener("input",()=>saveDraft())});loadDraft()}
+
+function save(){localStorage.setItem(KEY,JSON.stringify(teachers))}
+function meridiemKind(p){
+  p=String(p||"").toLowerCase().replace(/[ًٌٍَُِّْ]/g,"").trim();
+  if(!p)return "";
+  if(/^(ص|صباح|صباحا|am)$/.test(p))return "am";
+  /* ظ/ظهر/ع/عصر/م/مساء/ل/ليل كلها تُعامل كمساء */
+  if(/^(م|مساء|مساءا|ظ|ظهرا|ظهر|ع|عصرا|عصر|ز|ليلا|ليل|pm)$/.test(p))return "pm";
+  return "";
+}
+function timeToMin(v,p){
+  v=digits(String(v||"")).trim();
+  let m=v.match(/^(\d{1,2})(?:\.(\d{1,2}))?$/);
+  if(!m)return null;
+  let h=+m[1],mi=m[2]?+m[2]:0;
+  let k=meridiemKind(p);
+  if(k==="pm"&&h<12)h+=12;
+  if(k==="am"&&h===12)h=0;
+  if(h>23||mi>59)return null;
+  return h*60+mi;
+}
+function fmt(x){
+  x=((x%1440)+1440)%1440;let h=Math.floor(x/60),m=x%60,s=h>=12?"م":"ص",hh=h%12||12;
+  return String(hh).padStart(2,"0")+":"+String(m).padStart(2,"0")+" "+s;
+}
+function extractTimes(text){
+  /*
+    قواعد المواعيد:
+    - رقم واحد مثل 9 = من 9 إلى 10.
+    - 9.30 = 9:30 (نصف ساعة)، وكذلك ٩٫٣٠.
+    - وجود : بين رقمين في رسائل المعلمات يعني مدى زمني: 8:10 = 8 إلى 10، وليس 8:10 دقيقة.
+    - 9 : 10 ص = 9 إلى 10 صباحًا.
+    - 5 إلى 6 م = 5 إلى 6 مساءً.
+    - ص = صباحًا.
+    - م/ظ/ع/ز/ظهر/عصر/مساء/ليل/PM = مساءً.
+  */
+  let raw=String(text||"")
+    .replace(/[ًٌٍَُِّْ]/g,"")
+    .replace(/(\d)\s*[،,]\s*(\d{1,2})(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm|$))/gi,"$1.$2")
+    .replace(/[،,]/g," ")
+    .replace(/[٫٬]/g,".")
+    .replace(/[–—−]/g,"-")
+    .trim();
+  raw=digits(raw);
+  /* صيغ شائعة مثل ٩ ونص / ١٠ونصف / ٨ و نصف تعني :30. */
+  raw=raw.replace(/(\d{1,2})\s*و\s*(?:نص|نصف)/g,"$1.30");
+  /* صيغ الساعة والنصف المكتوبة متصلة: 3.30 عصرا / ٣.٣٠عصرا / 3.30م */
+  raw=raw.replace(/(\d{1,2})\s*[.٫]\s*30(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)\b)/gi,"$1.30");
+
+  const P="(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)";
+  const NUM="(\\d{1,2}(?:\\s*\\.\\s*(?:00|30))?)";
+
+  /* أولًا: المدى المكتوب بالنقطتين أو إلى/حتى/الشرطة.
+     النقطتان هنا مقصودهما 9:10 = 9 إلى 10، لا 9:10 دقيقة. */
+    /* 11:30 و10:00 = وقت بالساعة والدقائق. أما 9:10 و8:10 فمدى زمني. */
+  const clockColon=/\b(\d{1,2})\s*:\s*(00|30)\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?\b/i;
+  let cm=raw.match(clockColon);
+  if(cm){
+    let a=timeToMin(cm[1]+"."+cm[2],cm[3]||"");
+    if(a!==null)return {start:a,end:a+60,explicit:false};
+  }
+
+const colonRange=new RegExp(NUM+"\\s*:\\s*"+NUM+"\\s*("+P+")?","i");
+  let m=raw.match(colonRange);
+  if(m){
+    let suffix=m[3]||"";
+    /* إذا كانت الدلالة مكتوبة مرة واحدة بعد المدى، فهي للوقتَين معًا. */
+    let a=timeToMin(m[1].replace(/\s/g,""),suffix);
+    let b=timeToMin(m[2].replace(/\s/g,""),suffix);
+    if(a!==null&&b!==null){
+      /* حالة مثل 10:8 م: إذا كان وقت البداية بلا دلالة والـPM عند النهاية،
+         فالأقرب المقصود 10 صباحًا إلى 8 مساءً، لا 10 مساءً إلى 8 مساءً في اليوم التالي. */
+      if(b<=a && suffix && meridiemKind(suffix)==="pm" && !m[1].includes("ص")){
+        let rawA=+m[1].replace(/\s/g,"").split(".")[0];
+        let amStart=timeToMin(String(rawA),"ص");
+        if(amStart!==null && b>amStart){a=amStart;}
+      }
+      if(b<=a)b+=1440;
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+  const rangeRe=new RegExp(
+    NUM+"\\s*("+P+")?\\s*(?:إلى|الى|الي|حتى|من|-)\\s*"+
+    NUM+"\\s*("+P+")?","i"
+  );
+  m=raw.match(rangeRe);
+  if(m){
+    let p1=m[2]||"",p2=m[4]||p1;
+    /* إذا كانت الدلالة موجودة بعد النهاية فقط مثل 5 إلى 6 عصرا،
+       فهي تخص البداية والنهاية معًا. */
+    if(!m[2] && m[4])p1=m[4];
+    let a=timeToMin(m[1].replace(/\s/g,""),p1);
+    let b=timeToMin(m[3].replace(/\s/g,""),p2);
+    if(a!==null&&b!==null){
+      if(b<=a){
+        /* لو كتب 10 - 8 م فالمقصود عادة 10 صباحًا إلى 8 مساءً،
+           لأن الدلالة المسائية موجودة عند النهاية فقط. */
+        if(!m[2] && m[4] && meridiemKind(m[4])==="pm" && a<12*60) a=timeToMin(m[1].replace(/\s/g,""),"ص");
+        if(b<=a)b+=1440;
+      }
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+  /* وقت واحد: 9 أو 9.30 أو ٩٫٣٠ أو 9 ونص = ساعة واحدة كاملة. */
+  const halfRe=new RegExp("(?:^|[^0-9])"+NUM+"\\s*(?:و\\s*نص|ونص|و\\s*نصف|ونصف)?\\s*("+P+")?(?=$|[^0-9])","i");
+  m=raw.match(halfRe);
+  if(m){
+    let val=m[1].replace(/\s/g,"");
+    let a=timeToMin(val,m[2]||"");
+    if(a!==null)return {start:a,end:a+60,explicit:false};
+  }
+  return null;
+}
+
+function extractTeacherTime(text, teacherName){
+  let raw=String(text||'');
+  let nraw=norm(raw);
+  let tn=norm(teacherName||'');
+  let rest='';
+
+  /* نبحث عن اسم المعلمة داخل نفس السطر، مع السماح بأن يكون قبله رقم/شرطة/شرطة سفلية،
+     أو أن يكون الاسم مكتوبًا مختصرًا (الاسم الأول فقط). ثم نقرأ الوقت بعد الاسم فقط. */
+  if(tn && nraw.includes(tn)){
+    let pos=nraw.indexOf(tn);
+    rest=raw.slice(pos + teacherName.length);
+  }else if(tn){
+    let first=norm((teacherName||'').trim().split(/\s+/)[0]);
+    if(first && nraw.includes(first)){
+      let pos=nraw.indexOf(first);
+      rest=raw.slice(pos + (teacherName.trim().split(/\s+/)[0]||'').length);
+    }
+  }
+
+  /* إزالة أي بقايا فاصل/رقم ترتيب بين الاسم والوقت. */
+  rest=rest.replace(/^[\s\-–—_./\\:：*#()（）]+/,'').trim();
+  return extractTimes(rest);
+}
+
+function teacherMatch(text){
+let n=norm(text), exact=[];
+for(const t of teachers){
+let tn=norm(t.name);
+if(n.includes(tn))exact.push(t);
+}
+if(exact.length)return exact[0];
+let candidates=[];
+for(const t of teachers){
+let first=norm(t.name).split(" ")[0];
+if(first&&new RegExp("(^|\\s|[-–—])"+first+"($|\\s|[-–—])").test(n))candidates.push(t);
+}
+if(candidates.length===1)return candidates[0];
+if(candidates.length>1)return {ambiguous:true,names:candidates.map(x=>x.name)};
+/* fuzzy first name: handles مرفت/ميرفت and small spelling differences */
+function lev(a,b){
+let d=Array.from({length:b.length+1},(_,i)=>i);
+for(let i=0;i<a.length;i++){
+let nd=[i+1];
+for(let j=0;j<b.length;j++)nd.push(Math.min(nd[j]+1,d[j+1]+1,d[j]+(a[i]===b[j]?0:1)));
+d=nd;
+}return d[b.length]
+}
+let words=n.split(/\s+/).filter(w=>w.length>=3), best=[], min=99;
+for(const t of teachers){
+let f=norm(t.name).split(" ")[0];
+for(const w of words){
+let z=lev(w,f);
+if(z<min){min=z;best=[t]}else if(z===min)best.push(t)
+}
+}
+if(min<=1 && best.length===1)return best[0];
+return null
+}
+
+function removeEmojisAndDecorations(s){
+return String(s||"")
+.replace(/[\u{1F300}-\u{1FAFF}]/gu," ")
+.replace(/[\u{2600}-\u{27BF}]/gu," ")
+.replace(/[★☆✦✧✿❀❁❃❊❋♡♥❤💐🌷🌸🌺🌼🌹🤝➖↔]/gu," ")
+.replace(/[*_~`#]+/g," ")
+.replace(/[|<>[\]{}]+/g," ")
+.replace(/^[\s\-–—•·.,:：؛،]+|[\s\-–—•·.,:：؛،]+$/g," ")
+.replace(/\s+/g," ").trim()
+}
+function isNoiseLine(s){
+let n=norm(removeEmojisAndDecorations(s));
+if(!n)return true;
+const bad=[
+"قائمه","قائمة","جروب","جروب الاسراء","الاسراء","رفيقات","نصف وجه",
+"بارك الله","بارك الله فيكن","بارك الله فيكم","جزاكم الله","وفقكن",
+"بالتوفيق","ان شاء الله","ما شاء الله","اللهم بارك","حبيباتي",
+"حبيبتي","شكرا","شكرا لكم","تنبيه","ملحوظه","ملاحظه","المواعيد",
+"عدد الطالبات","المعلمات","طالبات","اختبار"
+];
+if(bad.some(x=>n.includes(norm(x))))return true;
+if(!/[ء-ي]/.test(s))return true;
+return false
+}
+function hasQalun(s){ const n=norm(s); return n.includes("قالون") || n.includes("قولون"); }
+function cleanName(s){
+/* أسماء الطالبات لا تحمل أرقام القائمة الأصلية نهائيًا.
+   نحذف الأرقام العربية/الإنجليزية في أي مكان داخل الاسم،
+   وكذلك الأقواس والنجوم التي كانت تلتصق برقم القائمة. */
+return removeEmojisAndDecorations(String(s)
+.replace(/[0-9٠-٩]+/g," ")
+.replace(/[()（）*«»\[\]{}]+/g," ")
+.replace(/(قالون|حفص)/gi," ")
+.replace(/\s+/g," ")
+)
+}
+function splitStudentsLine(line){
+let raw=line.trim();
+if(!raw || isNoiseLine(raw))return [];
+
+/* رقم المجموعة/الترتيب في أول السطر ليس جزءًا من الاسم.
+   نحتفظ به داخليًا فقط لكي نعرف أن كل من يحمل نفس الرقم له نفس الرواية. */
+let m=raw.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[\(（]?\s*([0-9٠-٩]+)\s*[\)）]?\s*(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂\/\\._\-–—*:：]|\s)*/);
+let groupNo=m?m[1]:"";
+let hadListNumber=!!m;
+if(hadListNumber) raw=raw.slice(m[0].length);
+
+let rv=hasQalun(raw)?"قالون":(norm(raw).includes("ورش")?"ورش":"حفص");
+
+/* الفواصل التي تدل بوضوح على وجود طالبتين في نفس السطر.
+   نغطي رموز القوائم المختلفة مثل 🍒 ✨ 🎀 🩷 ❤️‍🔥 بالإضافة للرموز السابقة. */
+let parts=raw.split(/\s*(?:🤝|❤|❤️|♥|💕|💗|💞|💓|💖|💘|💝|💟|❤️‍🔥|🩷|🍒|✨|🎀|🌿|🪻|🌸|🌷|🌹|🫂|🥀|🌱|🪷|👑|➖|↔|<>|\||\/|←|→)\s*/u).filter(Boolean);
+
+/* لو مفيش فاصل واضح، نقبل السطر فقط إذا كان مرقمًا كاسم منفرد */
+if(parts.length===1 && /\s{2,}/.test(raw)){
+  parts=raw.split(/\s{2,}/).filter(Boolean);
+}
+if(parts.length===1 && !hadListNumber)return [];
+
+return parts.map(x=>({
+  name:cleanName(x),
+  riwayah:rv,
+  groupNo:groupNo,
+  id:uid()
+})).filter(x=>x.name && !isNoiseLine(x.name));
+}
+function setParseStatus(id,type,text){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.className="status "+type;
+  el.style.display="block";
+  el.innerHTML=text;
+}
+
+function parseStudents(){
+students=[]; studentIssues=[];
+const lines=document.getElementById("studentsInput").value.split(/\r?\n/);
+let lastNumberedStudent=null,allowContinuation=false,started=false;
+lines.forEach((l,idx)=>{
+  const raw=l.trim();
+  if(!raw){ lastNumberedStudent=null; allowContinuation=false; return; }
+  const hasNumber=/^\s*[\*🎀👑🌷🪷🌸]*\s*[\(（]?[0-9٠-٩]+\s*[\)）]?\s*(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂\/\\._\-–—*:：]|\s)*/.test(raw) && /^\s*[\*🎀👑🌷🪷🌸]*\s*[\(（]?[0-9٠-٩]+/.test(raw);
+  if(!started && !hasNumber)return;
+  if(hasNumber){
+    started=true;
+    const added=splitStudentsLine(raw).filter(x=>x.name&&!isNoiseLine(x.name)&&!/^[.\-_*…]+$/.test(x.name));
+    added.forEach(x=>students.push(x));
+    lastNumberedStudent=added.length?added[added.length-1]:null;
+    allowContinuation=!!added.length;
+    if(!added.length && !/^[\*\s🎀👑🌷🪷🌸🌺🌼]*[0-9٠-٩]+[\)）]?(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂]|\s|[.\-_*…])*$/u.test(raw)){
+      studentIssues.push({line:idx,text:l,reason:"سطر مرقّم لم أستطع استخراج اسم طالبة منه."});
+    }
+    return;
+  }
+  if(allowContinuation && lastNumberedStudent&&!isNoiseLine(raw)){
+    if(hasQalun(raw) && cleanName(raw).trim()===""){
+      for(const st of students){ if(st.groupNo===lastNumberedStudent.groupNo) st.riwayah="قالون"; }
+      lastNumberedStudent.riwayah="قالون";
+      allowContinuation=false;
+      return;
+    }
+    const cleaned=cleanName(raw), words=cleaned.split(/\s+/).filter(Boolean);
+    const prose=/حفص|ورش|بارك|القرآن|القران|قلب|ان شاء|إن شاء|الله|تعالى|حبيبات|الأجر|الاجر|اختبار|سورة|سوره|كتب|فضلا|فضلاً|محتاج|معلمات|طالبات|عدد|تبارك|ما شاء|اللهم|وفق|جزاكم|شكرا|شكراً|بالتوفيق|رحال|السعادة|البركة|هنيئ|تشبعت|امتلأت|ازهرت|قائمة|رفيقات/i;
+    const looksLikeName=/^[ء-ي]+(?:\s+[ء-ي]+){1,5}$/.test(cleaned)&&words.length>=2&&words.length<=6&&!prose.test(cleaned);
+    if(looksLikeName){
+      const st={name:cleaned,riwayah:hasQalun(raw)?'قالون':'حفص',groupNo:lastNumberedStudent.groupNo,id:uid()};
+      students.push(st); lastNumberedStudent=st; allowContinuation=false; return;
+    }
+  }
+  lastNumberedStudent=null; allowContinuation=false;
+});
+const groupRiwayah={};
+for(const st of students){if(!st.groupNo)continue;if(st.riwayah==="قالون")groupRiwayah[st.groupNo]="قالون";else if(!(st.groupNo in groupRiwayah))groupRiwayah[st.groupNo]="حفص";}
+for(const st of students){if(st.groupNo&&groupRiwayah[st.groupNo])st.riwayah=groupRiwayah[st.groupNo];}
+renderStudents();
+const dupMap={}; students.forEach(s=>{let k=norm(s.name);(dupMap[k]??=[]).push(s)});
+const dups=Object.values(dupMap).filter(a=>a.length>1).map(a=>a[0].name);
+const q=students.filter(x=>x.riwayah==="قالون").length,h=students.length-q;
+const groupCount=new Set(students.map(x=>x.groupNo).filter(Boolean)).size;
+const st=document.getElementById("studentsStats"); if(st){st.style.display=students.length?"grid":"none";st.innerHTML=`<div class="stat"><b>${students.length}</b>إجمالي الطالبات</div><div class="stat"><b>${groupCount}</b>مجموعة/رقم</div><div class="stat"><b>${h}</b>حفص</div><div class="stat"><b>${q}</b>قالون</div><div class="stat"><b>${dups.length}</b>أسماء مكررة</div>`}
+renderStudentIssues();
+if(!students.length)setParseStatus("studentsStatus","bad","❌ لم يتم فصل أي طالبة. راجعي تنسيق القائمة.");
+else if(studentIssues.length)setParseStatus("studentsStatus","warn","⚠️ تم فصل "+students.length+" طالبة، لكن يوجد "+studentIssues.length+" سطر يحتاج مراجعة. يمكنك تعديل السطر من أسفل التحليل.");
+else if(dups.length)setParseStatus("studentsStatus","warn","⚠️ تم فصل "+students.length+" طالبة بنجاح، لكن وُجدت أسماء مكررة: "+dups.slice(0,8).join("، ")+(dups.length>8?"…":""));
+else setParseStatus("studentsStatus","ok","✓ تم فصل الأسماء بنجاح — تم تجاهل كل ما قبل أول رقم وأي كلام خارج قائمة الأسماء.");
+}
+function renderStudents(){
+/* يتم فصل الطالبات داخليًا فقط، ولا نعرض قائمة الفصل الطويلة على الشاشة. */
+document.getElementById("studentsPreview").innerHTML="";
+}
+function clearStudents(event){
+  rememberInputs();
+  if(event){event.preventDefault();event.stopPropagation();}
+  const input=document.getElementById("studentsInput");
+  if(input) input.value="";
+  students=[];
+  renderStudents();
+  const status=document.getElementById("studentsStatus");
+  if(status){status.style.display="none";status.innerHTML="";status.className="status";}
+  return false;
+}
+
+function clearSchedule(event){
+  rememberInputs();
+  if(event){event.preventDefault();event.stopPropagation();}
+  const input=document.getElementById("scheduleInput");
+  if(input) input.value="";
+  schedule=[]; scheduleIssues=[];
+  renderQalun();
+  const status=document.getElementById("scheduleStatus");
+  if(status){status.style.display="none";status.innerHTML="";status.className="status";}
+  const stats=document.getElementById("scheduleStats"); if(stats){stats.style.display="none";stats.innerHTML="";}
+  const preview=document.getElementById("schedulePreview"); if(preview){preview.innerHTML="";preview.style.display="none";}
+  const issues=document.getElementById("scheduleIssues"); if(issues)issues.innerHTML="";
+  return false;
+}
+
+function findScheduleTeacher(lines,i){
+let t=teacherMatch(lines[i]);if(t)return t;
+for(let d=1;d<=2;d++){
+if(i-d>=0){t=teacherMatch(lines[i-d]);if(t)return t}
+if(i+d<lines.length){t=teacherMatch(lines[i+d]);if(t)return t}
+}
+return null
+}
+function parseSchedule(){
+schedule=[]; scheduleIssues=[];
+let lines=document.getElementById("scheduleInput").value.split(/\r?\n/).map(x=>x.trim());
+let scheduleStarted=false;
+for(let i=0;i<lines.length;i++){
+  const line=lines[i]; if(!line)continue;
+  const emptySlot=/^\s*[\(（]?\s*[0-9٠-٩]+\s*[\)）]?\s*[-_./\\:：]*\s*$/.test(line); if(emptySlot)continue;
+  let t=teacherMatch(line), r=null;
+  if(t){ r=extractTeacherTime(line,t.name); if(!r)r=extractTeacherTime(line,(t.name||'').trim().split(/\s+/)[0]); }
+  if(!scheduleStarted){ if(!t||!r)continue; scheduleStarted=true; }
+  else {
+    if(!t){
+      if(/\b(?:[0-9٠-٩]{1,2}(?:[.:،][0-9٠-٩]{1,2})?|\d{1,2}\s*(?:ونص|ونصف))\b/.test(line)&&!/^(?:[-_*🌷💕\s]|[0-9٠-٩])+$/.test(line))scheduleIssues.push({line:i,text:lines[i],reason:"يوجد وقت في السطر لكن لم أتعرف على اسم المعلمة."});
+      continue;
+    }
+    if(!r){scheduleIssues.push({line:i,text:lines[i],reason:"تعرفت على المعلمة لكن لم أفهم وقتها."});continue;}
+  }
+  if(t.ambiguous){scheduleIssues.push({line:i,text:lines[i],reason:"اسم المعلمة مطابق لأكثر من قالب."});continue;}
+  schedule.push({teacherId:t.id,teacherName:t.name,start:r.start,end:r.end,explicit:r.explicit});
+}
+for(const s of schedule){let dur=s.end-s.start;if(dur<60){s.end=s.start+60;dur=60;}if(dur>120){s.end=s.start+120;dur=120;}}
+renderQalun();
+const uniqueTeachers=new Set(schedule.map(s=>s.teacherId)).size,totalMin=schedule.reduce((a,s)=>a+s.end-s.start,0);
+const st=document.getElementById("scheduleStats"); if(st){st.style.display=schedule.length?"grid":"none";st.innerHTML=`<div class="stat"><b>${schedule.length}</b>موعد</div><div class="stat"><b>${uniqueTeachers}</b>معلمة</div><div class="stat"><b>${Math.floor(totalMin/60)}س ${totalMin%60?totalMin%60+"د":""}</b>إجمالي الوقت</div><div class="stat"><b>${schedule.reduce((a,s)=>a+Math.floor((s.end-s.start)/5),0)}</b>سعة الطالبات</div>`}
+renderScheduleIssues();
+if(!schedule.length)setParseStatus("scheduleStatus","bad","❌ لم يتم فصل أي موعد. تأكدي من اسم المعلمة ووجود الوقت في نفس السطر.");
+else if(scheduleIssues.length)setParseStatus("scheduleStatus","warn","⚠️ تم فصل "+schedule.length+" موعد، لكن يوجد "+scheduleIssues.length+" سطر يحتاج مراجعة. يمكنك إصلاحه من أسفل التحليل.");
+else setParseStatus("scheduleStatus","ok","✓ تم تحليل المواعيد بنجاح — تم تجاهل كل ما قبل أول موعد صالح والخانات الفارغة.");
+}
+function renderStudentIssues(){
+ const box=document.getElementById("studentIssues"); if(!box)return;
+ if(!studentIssues.length){box.innerHTML="";return;}
+ box.innerHTML=`<div class="review"><b>⚠️ سطور تحتاج مراجعة</b><div class="hint">عدّلي السطر كما تريدين ثم اضغطي «تعديل وإعادة التحليل»، أو تجاهليه إذا كان ليس طالبة.</div>${studentIssues.map((it,k)=>`<div class="issue-card error"><b>السطر ${it.line+1}</b><div class="issue-line">${esc(it.text)}</div><div class="hint">${esc(it.reason)}</div><input id="studentFix_${k}" value="${esc(it.text)}" placeholder="اكتبي السطر الصحيح"><div class="issue-actions"><button type="button" class="green" onclick="fixStudentIssue(${k})">✏️ تعديل وإعادة التحليل</button><button type="button" class="gray" onclick="ignoreStudentIssue(${k})">🗑️ تجاهل السطر</button></div></div>`).join("")}</div>`;
+}
+function fixStudentIssue(k){const it=studentIssues[k];if(!it)return;const v=document.getElementById("studentFix_"+k)?.value??"";const lines=document.getElementById("studentsInput").value.split(/\r?\n/);lines[it.line]=v;document.getElementById("studentsInput").value=lines.join("\n");saveDraft();parseStudents();}
+function ignoreStudentIssue(k){const it=studentIssues[k];if(!it)return;const lines=document.getElementById("studentsInput").value.split(/\r?\n/);lines[it.line]="";document.getElementById("studentsInput").value=lines.join("\n");saveDraft();parseStudents();}
+function renderScheduleIssues(){
+ const box=document.getElementById("scheduleIssues"); if(!box)return;
+ if(!scheduleIssues.length){box.innerHTML="";return;}
+ box.innerHTML=`<div class="review"><b>⚠️ سطور تحتاج مراجعة</b><div class="hint">يمكنك تصحيح السطر كاملًا، أو لو المشكلة في اسم المعلمة فقط اختاري القالب الصحيح وسيُستبدل الاسم مع الاحتفاظ بباقي السطر.</div>${scheduleIssues.map((it,k)=>{const names=teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("");return `<div class="issue-card"><b>السطر ${it.line+1}</b><div class="issue-line">${esc(it.text)}</div><div class="hint">${esc(it.reason)}</div><label class="hint">اختيار المعلمة الصحيحة (اختياري)</label><select id="scheduleTeacherFix_${k}"><option value="">— اختاري معلمة —</option>${names}</select><input id="scheduleFix_${k}" value="${esc(it.text)}" placeholder="أو اكتبي السطر الصحيح كاملًا"><div class="issue-actions"><button type="button" class="green" onclick="fixScheduleIssue(${k})">✏️ تعديل وإعادة التحليل</button><button type="button" class="gray" onclick="ignoreScheduleIssue(${k})">🗑️ تجاهل السطر</button></div></div>`}).join("")}</div>`;
+}
+function fixScheduleIssue(k){const it=scheduleIssues[k];if(!it)return;const input=document.getElementById("scheduleFix_"+k),sel=document.getElementById("scheduleTeacherFix_"+k);let v=input?.value??"";const tid=sel?.value||"";if(tid){const t=teachers.find(x=>x.id===tid);if(t){const old=it.text;let replaced=false;for(const cand of teachers){if(old.includes(cand.name)){v=old.replace(cand.name,t.name);replaced=true;break;}}if(!replaced){const m=old.match(/^(\s*[0-9٠-٩]+\s*[-_/.)：:]?\s*)/);v=(m?m[1]:"")+t.name+" "+old.slice(m?m[0].length:0).trim();}}}const lines=document.getElementById("scheduleInput").value.split(/\r?\n/);lines[it.line]=v;document.getElementById("scheduleInput").value=lines.join("\n");saveDraft();parseSchedule();}
+function ignoreScheduleIssue(k){const it=scheduleIssues[k];if(!it)return;const lines=document.getElementById("scheduleInput").value.split(/\r?\n/);lines[it.line]="";document.getElementById("scheduleInput").value=lines.join("\n");saveDraft();parseSchedule();}
+
+function renderQalun(){
+let box=document.getElementById("qalunTeachers");
+if(!schedule.length){box.innerHTML="حللي المواعيد أولًا.";return}
+
+/* المعلمة تظهر مرة واحدة فقط في اختيار قالون، مهما كان لها أكثر من فترة. */
+let seen=new Set(), unique=[];
+for(const s of schedule){
+  if(seen.has(s.teacherId))continue;
+  seen.add(s.teacherId);
+  unique.push(s);
+}
+box.innerHTML=unique.map(s=>"<label class='check'><input type='checkbox' class='qalunCheck' value='"+s.teacherId+"'><span>"+esc(s.teacherName)+"</span></label>").join("")
+}
+function selectAllQalun(){document.querySelectorAll(".qalunCheck").forEach(x=>x.checked=true)}
+function clearQalun(){document.querySelectorAll(".qalunCheck").forEach(x=>x.checked=false)}
+function selectedQalun(){return [...document.querySelectorAll(".qalunCheck:checked")].map(x=>x.value)}
+
+function searchTeachers(){
+ const q=norm(document.getElementById("teacherSearch")?.value||"");
+ const box=document.getElementById("teacherSearchResults"); if(!box)return;
+ if(!q){box.innerHTML="";return;}
+ const found=teachers.filter(t=>norm(t.name).includes(q));
+ box.innerHTML=found.length?found.map(t=>`<div class="search-result"><b>${esc(t.name)}</b>${teacherTemplatesLocked?"<div class='hint'>🔒 القوالب مقفلة حاليًا</div>":`<div class="buttons"><button type="button" class="gray" onclick="editTeacher('${t.id}')">✏️ تعديل</button><button type="button" class="red" onclick="deleteTeacher('${t.id}')">🗑️ حذف</button></div>`}</div>`).join(""):"<div class='search-result'>لا يوجد قالب مطابق.</div>";
+}
+function updateTeacherLockUI(){
+ const b=document.getElementById("lockTeachersBtn"), add=document.getElementById("addTeacherBtn"), st=document.getElementById("teacherLockStatus");
+ if(b)b.innerText=teacherTemplatesLocked?"🔓 فتح تعديل القوالب":"🔒 قفل قوالب المعلمات";
+ if(add){add.disabled=false;add.classList.remove("locked");}
+ if(st)st.innerText=teacherTemplatesLocked?"🔒 القوالب مقفلة للحماية من التعديل أو الحذف بالخطأ.":"القوالب مفتوحة للتعديل.";
+ searchTeachers();
+}
+function toggleTeacherLock(){
+ teacherTemplatesLocked=!teacherTemplatesLocked;
+ localStorage.setItem("quran_teacher_lock_v1",teacherTemplatesLocked?"1":"0");
+ updateTeacherLockUI();
+}
+function renderTeachers(){
+  /* القوالب لا تُعرض في الصفحة الرئيسية؛ تظهر داخل نافذة الإدارة فقط. */
+  if(document.getElementById("teacherManagerModal") && !document.getElementById("teacherManagerModal").classList.contains("hidden")) renderTeacherManager();
+}
+function openTeacherManager(){
+  document.getElementById("teacherManagerModal").classList.remove("hidden");
+  renderTeacherManager();
+}
+function closeTeacherManager(){document.getElementById("teacherManagerModal").classList.add("hidden")}
+function renderTeacherManager(){
+  const box=document.getElementById("teacherManagerList"); if(!box)return;
+  const q=norm(document.getElementById("teacherManagerSearch")?.value||"");
+  const found=teachers.filter(t=>!q||norm(t.name).includes(q));
+  const lockBtn=document.getElementById("managerLockBtn");
+  if(lockBtn) lockBtn.innerText=teacherTemplatesLocked?"🔓 فتح تعديل القوالب":"🔒 قفل التعديل والحذف";
+  box.innerHTML=found.length?found.map(t=>`<div class="search-result" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(t.name)}</b><div class="buttons"><button type="button" class="gray" ${teacherTemplatesLocked?'disabled':''} onclick="editTeacher('${t.id}')">✏️ تعديل</button><button type="button" class="red" ${teacherTemplatesLocked?'disabled':''} onclick="deleteTeacher('${t.id}')">🗑️ حذف</button></div></div>`).join(""):"<div class='hint'>لا توجد قوالب مطابقة.</div>";
+}
+function openTeacher(){
+document.getElementById("modalTitle").innerText="➕ إضافة معلمة جديدة";
+["editId","tName","tPhone","tTelegram","tMessenger","tWhatsapp","tNotes"].forEach(id=>document.getElementById(id).value="");
+document.getElementById("modal").classList.remove("hidden")
+}
+function editTeacher(id){
+if(teacherTemplatesLocked){alert("قوالب المعلمات مقفلة حاليًا.");return;}
+let t=teachers.find(x=>x.id===id);if(!t)return;
+document.getElementById("modalTitle").innerText="✏️ تعديل قالب المعلمة";
+document.getElementById("editId").value=id;
+document.getElementById("tName").value=t.name||"";
+document.getElementById("tPhone").value=t.phone||"";
+document.getElementById("tTelegram").value=t.telegram||"";
+document.getElementById("tMessenger").value=t.messenger||"";
+document.getElementById("tWhatsapp").value=t.whatsapp||"";
+document.getElementById("tNotes").value=t.notes||"";
+document.getElementById("modal").classList.remove("hidden")
+}
+function closeTeacher(){document.getElementById("modal").classList.add("hidden")}
+function saveTeacher(){
+let id=document.getElementById("editId").value,name=document.getElementById("tName").value.trim();
+if(!name){alert("اكتبي اسم المعلمة.");return}
+let o={id:id||uid(),name,phone:document.getElementById("tPhone").value.trim(),telegram:document.getElementById("tTelegram").value.trim(),messenger:document.getElementById("tMessenger").value.trim(),whatsapp:document.getElementById("tWhatsapp").value.trim(),notes:document.getElementById("tNotes").value.trim()};
+if(id){let i=teachers.findIndex(x=>x.id===id);if(i>=0)teachers[i]=o}else teachers.push(o);
+save();closeTeacher();renderTeachers()
+}
+function deleteTeacher(id){
+if(teacherTemplatesLocked){alert("قوالب المعلمات مقفلة حاليًا.");return;}
+let t=teachers.find(x=>x.id===id);if(t&&confirm("هل تريدين حذف "+t.name+"؟")){teachers=teachers.filter(x=>x.id!==id);save();renderTeachers()}
+}
+
+function distribute(){
+  const qids=selectedQalun();
+  const total=students.length;
+  if(!schedule.length)throw new Error("لا توجد مواعيد صالحة.");
+  const qCount=students.filter(s=>s.riwayah==="قالون").length;
+  if(qCount && !qids.length)throw new Error("يوجد طالبات قالون، اختاري معلمة أو أكثر لقالون.");
+
+  let groups=schedule.map(s=>({
+    teacherId:s.teacherId, teacherName:s.teacherName, start:s.start, end:s.end,
+    capacity:Math.floor((s.end-s.start)/5), students:[]
+  })).filter(g=>g.capacity>0);
+  if(!groups.length)throw new Error("لا توجد مواعيد صالحة.");
+  const cap=groups.reduce((a,g)=>a+g.capacity,0);
+  if(total>cap)throw new Error("إجمالي وقت المعلمات لا يكفي عدد الطالبات. المطلوب "+total+" والموجود "+cap+".");
+
+  /* الأولوية الأولى: تساوي العدد بين القوائم قدر الإمكان.
+     إذا كان 81 طالبة و9 معلمات => 9 لكل معلمة.
+     إذا لم ينقسم العدد بالتساوي، الفرق بين أي قائمتين لا يزيد عن طالبة واحدة. */
+  const n=groups.length, base=Math.floor(total/n), rem=total%n;
+  const targets=groups.map((g,i)=>base+(i<rem?1:0));
+
+  /* نختار الطالبات بالترتيب الأصلي، مع احترام قالون.
+     كل معلمة تأخذ عددها المستهدف بالضبط إن كانت السعة تسمح. */
+  const remaining=students.slice();
+  const takeNext=(g,target)=>{
+    while(g.students.length<target){
+      const isQTeacher=qids.includes(g.teacherId);
+      /* معلمة قالون: نعطي قالون أولوية داخل حصتها حتى لا تتعطل السعة لاحقًا.
+         باقي المعلمات: تأخذ أول طالبة متاحة بالترتيب الأصلي. */
+      let idx=-1;
+      if(isQTeacher) idx=remaining.findIndex(st=>st.riwayah==="قالون");
+      if(idx<0) idx=remaining.findIndex(st=>st.riwayah!=="قالون" || isQTeacher);
+      if(idx<0)throw new Error("لا يمكن تحقيق التوزيع المطلوب مع قيد طالبات قالون. زيدي معلمات قالون المختارات أو عدلي المواعيد.");
+      const st=remaining.splice(idx,1)[0];
+      g.students.push(st);
+    }
+  };
+  for(let i=0;i<groups.length;i++){
+    const target=Math.min(targets[i],groups[i].capacity);
+    takeNext(groups[i],target);
+  }
+
+  /* لو السعات غير متساوية وجعلت الأهداف غير ممكنة، وزعي الباقي على أقل القوائم
+     مع الحفاظ على فرق لا يتجاوز الإمكانات الفعلية للسعة. */
+  while(remaining.length){
+    let candidates=groups.filter(g=>g.students.length<g.capacity && (remaining.some(st=>st.riwayah!=="قالون") || qids.includes(g.teacherId)));
+    if(!candidates.length)throw new Error("لم يمكن توزيع كل الطالبات بسبب سعة المواعيد أو قيد قالون.");
+    candidates.sort((a,b)=>a.students.length-b.students.length);
+    const g=candidates[0];
+    const idx=remaining.findIndex(st=>st.riwayah!=="قالون" || qids.includes(g.teacherId));
+    if(idx<0)throw new Error("تبقت طالبات قالون ولا توجد سعة في معلمات قالون المختارات.");
+    g.students.push(remaining.splice(idx,1)[0]);
+  }
+
+  /* ترتيب كل قائمة يظل حسب ترتيب قائمة الأسماء الأصلية. */
+  const order=new Map(students.map((s,i)=>[s.id,i]));
+  groups.forEach(g=>{
+    g.students.sort((a,b)=>order.get(a.id)-order.get(b.id));
+    let cur=g.start;
+    g.students.forEach(st=>{st.start=cur;st.end=cur+5;cur+=5;});
+  });
+  return groups.filter(g=>g.students.length);
+}
+function buildOutput(g){
+let t=teachers.find(x=>x.id===g.teacherId),name=t?t.name:g.teacherName;
+let actualStart=g.students.length?g.students[0].start:0;
+let actualEnd=g.students.length?g.students[g.students.length-1].end:actualStart;
+
+/* سطر فارغ حقيقي، وليس رمزًا مخفيًا */
+let blank="\n\n";
+
+let out="*🌷( قائمه اختبار)🌷*"+blank;
+out+="*المعلمة: "+name+"*"+blank;
+out+="🕐 "+fmt(actualStart)+" - "+fmt(actualEnd)+blank;
+out+="🔢 عدد الطالبات: "+g.students.length+blank;
+out+="•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈"+blank;
+
+/* هنا نولد أرقامًا جديدة 1، 2، 3...
+   الأرقام القديمة الموجودة في قائمة الإدخال لا تنتقل */
+g.students.forEach((s,i)=>{
+  out+=(i+1)+") "+s.name+(s.riwayah==="قالون"?" — قالون":"")+"\n";
+  out+=fmt(s.start)+" - "+fmt(s.end);
+  if(i<g.students.length-1) out+=blank;
+});
+
+out+=blank;
+out+="•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈•"+blank;
+
+out+="*المعلمه/ "+name+"*"+blank;
+out+="*وسائل التواصل المتاحة:*"+blank;
+
+if(t){
+  if(t.phone) out+="*اتصال*\n"+t.phone+blank;
+  if(t.telegram) out+="▪ تليجرام\n"+t.telegram+blank;
+  if(t.messenger) out+="▪ مسنجر\n"+t.messenger+blank;
+  if(t.whatsapp) out+="▪ واتس\n"+t.whatsapp+blank;
+  if(t.notes) out+=t.notes+blank;
+}
+
+out+="🌷 *المواعيد بتوقيت مصر*🌷"+blank;
+out+="🌷 *برجاء الالتزام بالمواعيد*🌷"+blank;
+out+="•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈";
+
+return out
+}
+function finalCheck(){
+ const box=document.getElementById("finalCheckStatus");
+ try{
+  if(!students.length)parseStudents(); if(!schedule.length)parseSchedule();
+  if(!students.length||!schedule.length)throw new Error("يجب تحليل الطالبات والمواعيد أولًا.");
+  const q=students.filter(s=>s.riwayah==="قالون"),qids=selectedQalun(),caps=schedule.reduce((a,s)=>a+Math.floor((s.end-s.start)/5),0);
+  const missingQ=q.length&&!qids.length, qcap=q.length?schedule.filter(s=>qids.includes(s.teacherId)).reduce((a,s)=>a+Math.floor((s.end-s.start)/5),0):0;
+  const dupMap={};students.forEach(s=>(dupMap[norm(s.name)]??=[]).push(s)); const dups=Object.values(dupMap).filter(a=>a.length>1);
+  let issues=[]; if(students.length>caps)issues.push("سعة المواعيد أقل من عدد الطالبات"); if(missingQ)issues.push("توجد طالبات قالون ولم تختاري معلمة قالون"); if(q.length&&qcap<q.length)issues.push("سعة معلمات قالون لا تكفي عدد طالبات قالون");
+  box.innerHTML=issues.length?`<div class="status warn">⚠️ الفحص النهائي يحتاج مراجعة: ${issues.join(" — ")}${dups.length?" — توجد أسماء مكررة أيضًا":""}</div>`:`<div class="status ok">✓ الفحص النهائي سليم: ${students.length} طالبة، ${caps} خانة متاحة، وكل طالبات قالون يمكن توزيعهن على المعلمات المختارات.${dups.length?" مع وجود أسماء مكررة تحتاج مراجعة.":""}</div>`;
+ }catch(e){box.innerHTML=`<div class="status bad">❌ ${esc(e.message)}</div>`}
+}
+function buildReview(groups){
+ const panel=document.getElementById("reviewPanel"); if(!panel)return;
+ let total=groups.reduce((a,g)=>a+g.students.length,0);
+ let broken=[];
+ groups.forEach(g=>{
+   const seen={};
+   g.students.forEach(st=>{ if(st.groupNo){ (seen[st.groupNo]??=[]).push(st); } });
+   Object.values(seen).forEach(arr=>{ if(arr.length===1){ const original=students.filter(x=>x.groupNo===arr[0].groupNo); if(original.length>1)broken.push("مجموعة "+arr[0].groupNo+" مع "+g.teacherName); } });
+ });
+ panel.innerHTML=`<div class="review"><b>📋 مراجعة قبل النسخ</b><div class="stats"><div class="stat"><b>${total}</b>تم توزيعها</div><div class="stat"><b>${groups.length}</b>قائمة</div><div class="stat"><b>${students.filter(x=>x.riwayah==='قالون').length}</b>قالون</div><div class="stat"><b>${broken.length}</b>مجموعات احتاجت فصلًا</div></div><div style="margin-top:10px"><b>سعة كل معلمة:</b>${groups.map(g=>`<div class="capacity-row"><span>${esc(g.teacherName)}</span><span>${g.students.length} / ${g.capacity}</span></div>`).join("")}</div>${broken.length?`<div class="warning"><b>⚠️ ملاحظة:</b><ul class="warning-list">${broken.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:`<div class="success" style="margin-top:10px">✓ المجموعات حافظت على الرفيقات معًا قدر الإمكان.</div>`}</div>`;
+}
+
+function generateLists(){
+rememberInputs();
+let msg=document.getElementById("message"),res=document.getElementById("results");
+try{
+if(!students.length)parseStudents();
+if(!schedule.length)parseSchedule();
+if(!students.length)throw new Error("لم يتم إدخال الطالبات.");
+if(!schedule.length)throw new Error("لم يتم إدخال مواعيد المعلمات.");
+let groups=distribute();res.innerHTML="";
+const assigned=groups.reduce((a,g)=>a+g.students.length,0);
+if(assigned!==students.length)throw new Error("يوجد طالبات لم يتم توزيعهن بالكامل.");
+if(students.some(s=>s.riwayah==="قالون" && !groups.some(g=>g.students.includes(s))))throw new Error("توجد طالبة قالون لم تحصل على موعد.");
+buildReview(groups);
+groups.forEach(g=>{
+let out=buildOutput(g),div=document.createElement("div");div.className="result";
+div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*5)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
+res.appendChild(div)
+});
+msg.innerHTML="<p class='success'>✓ تم إنشاء "+groups.length+" قائمة لـ "+students.length+" طالبة.</p>";
+res.scrollIntoView({behavior:"smooth"})
+}catch(e){msg.innerHTML="<p class='error'>❌ "+esc(e.message)+"</p>"}
+}
+async function copyList(btn){
+let text=btn.closest(".result").querySelector("pre").innerText;
+try{await navigator.clipboard.writeText(text)}catch(e){let a=document.createElement("textarea");a.value=text;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove()}
+let old=btn.innerText;btn.innerText="✓ تم النسخ";setTimeout(()=>btn.innerText=old,1400)
+}
+renderTeachers();
+updateTeacherLockUI();
+setupAutosave();
+</script>
+</body>
+</html>
