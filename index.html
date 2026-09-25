@@ -266,7 +266,8 @@ function extractTimes(text){
     if(a!==null)return {start:a,end:a+60,explicit:false};
   }
 
-const colonRange=new RegExp(NUM+"\\s*:\\s*"+NUM+"\\s*("+P+")?","i");
+const COLONNUM="(\\d{1,2}(?:\\s*[.\\u066b]\\s*(?:00|30|[0-5]?\\d))?)";
+     const colonRange=new RegExp(COLONNUM+"\\s*:\\s*"+COLONNUM+"\\s*("+P+")?","i");
   let m=raw.match(colonRange);
   if(m){
     let suffix=m[3]||"";
