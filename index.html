@@ -191,6 +191,7 @@ localStorage.setItem(KEY,JSON.stringify(teachers));
 
 let students=[],schedule=[];
 let studentIssues=[],scheduleIssues=[];
+let studentDuplicateResolutions={};
 let lastInputSnapshot=null;
 let teacherTemplatesLocked=localStorage.getItem("quran_teacher_lock_v1")==="1";
 const DRAFT_KEY="quran_exam_drafts_v1";
@@ -449,7 +450,7 @@ function setParseStatus(id,type,text){
 }
 
 function parseStudents(){
-students=[]; studentIssues=[];
+students=[]; studentIssues=[]; studentDuplicateResolutions={};
 const lines=document.getElementById("studentsInput").value.split(/\r?\n/);
 let lastNumberedStudent=null,allowContinuation=false,started=false;
 lines.forEach((l,idx)=>{
@@ -490,7 +491,8 @@ for(const st of students){if(!st.groupNo)continue;if(st.riwayah==="قالون")g
 for(const st of students){if(st.groupNo&&groupRiwayah[st.groupNo])st.riwayah=groupRiwayah[st.groupNo];}
 renderStudents();
 const dupMap={}; students.forEach(s=>{let k=norm(s.name);(dupMap[k]??=[]).push(s)});
-const dups=Object.values(dupMap).filter(a=>a.length>1).map(a=>a[0].name);
+const duplicateGroups=Object.entries(dupMap).filter(([k,a])=>a.length>1).map(([key,a])=>({key,name:a[0].name,count:a.length}));
+const dups=duplicateGroups.map(a=>a.name);
 const q=students.filter(x=>x.riwayah==="قالون").length,h=students.length-q;
 const groupCount=new Set(students.map(x=>x.groupNo).filter(Boolean)).size;
 const st=document.getElementById("studentsStats"); if(st){st.style.display=students.length?"grid":"none";st.innerHTML=`<div class="stat"><b>${students.length}</b>إجمالي الطالبات</div><div class="stat"><b>${groupCount}</b>مجموعة/رقم</div><div class="stat"><b>${h}</b>حفص</div><div class="stat"><b>${q}</b>قالون</div><div class="stat"><b>${dups.length}</b>أسماء مكررة</div>`}
@@ -570,8 +572,28 @@ else setParseStatus("scheduleStatus","ok","✓ تم تحليل المواعيد 
 }
 function renderStudentIssues(){
  const box=document.getElementById("studentIssues"); if(!box)return;
- if(!studentIssues.length){box.innerHTML="";return;}
- box.innerHTML=`<div class="review"><b>⚠️ سطور تحتاج مراجعة</b><div class="hint">عدّلي السطر كما تريدين ثم اضغطي «تعديل وإعادة التحليل»، أو تجاهليه إذا كان ليس طالبة.</div>${studentIssues.map((it,k)=>`<div class="issue-card error"><b>السطر ${it.line+1}</b><div class="issue-line">${esc(it.text)}</div><div class="hint">${esc(it.reason)}</div><input id="studentFix_${k}" value="${esc(it.text)}" placeholder="اكتبي السطر الصحيح"><div class="issue-actions"><button type="button" class="green" onclick="fixStudentIssue(${k})">✏️ تعديل وإعادة التحليل</button><button type="button" class="gray" onclick="ignoreStudentIssue(${k})">🗑️ تجاهل السطر</button></div></div>`).join("")}</div>`;
+ const unresolvedDuplicates=duplicateGroups.filter(g=>!studentDuplicateResolutions[g.key]);
+ if(!studentIssues.length&&!unresolvedDuplicates.length){box.innerHTML="";return;}
+ let html="";
+ if(unresolvedDuplicates.length){
+   html+=`<div class="review"><b>⚠️ مشكلات تحتاج قرارًا</b><div class="hint">الموقع وجد أسماء متطابقة، لكنه لن يعتبرها خطأ تلقائيًا. اختاري ماذا تريدين أن يفعل مع كل اسم.</div>${unresolvedDuplicates.map(g=>`<div class="issue-card"><b>اسم مكرر: ${esc(g.name)}</b><div class="hint">وُجد هذا الاسم ${g.count} مرات. هل هن طالبات مختلفات أم تريدين تعديل القائمة؟</div><div class="issue-actions"><button type="button" class="green" onclick="resolveStudentDuplicate('${esc(g.key)}','different')">👭 طالبتان مختلفتان — استمر</button><button type="button" class="gray" onclick="focusStudentList()">✏️ أراجع/أعدل الاسم</button><button type="button" class="gray" onclick="resolveStudentDuplicate('${esc(g.key)}','ignore')">🗑️ تجاهل المشكلة واستمر</button></div></div>`).join("")}</div>`;
+ }
+ if(studentIssues.length){
+   html+=`<div class="review"><b>⚠️ سطور تحتاج مراجعة</b><div class="hint">عدّلي السطر كما تريدين ثم اضغطي «تعديل وإعادة التحليل»، أو تجاهليه إذا كان ليس طالبة.</div>${studentIssues.map((it,k)=>`<div class="issue-card error"><b>السطر ${it.line+1}</b><div class="issue-line">${esc(it.text)}</div><div class="hint">${esc(it.reason)}</div><input id="studentFix_${k}" value="${esc(it.text)}" placeholder="اكتبي السطر الصحيح"><div class="issue-actions"><button type="button" class="green" onclick="fixStudentIssue(${k})">✏️ تعديل وإعادة التحليل</button><button type="button" class="gray" onclick="ignoreStudentIssue(${k})">🗑️ تجاهل السطر</button></div></div>`).join("")}</div>`;
+ }
+ box.innerHTML=html;
+}
+function resolveStudentDuplicate(key,action){
+ studentDuplicateResolutions[key]=action;
+ renderStudentIssues();
+ const unresolved=duplicateGroups.filter(g=>!studentDuplicateResolutions[g.key]).length;
+ if(!unresolved && !studentIssues.length) setParseStatus("studentsStatus","ok","✓ تم فصل الأسماء بنجاح — تمت معالجة كل المشكلات.");
+}
+function focusStudentList(){
+ const el=document.getElementById("studentsInput");
+ if(!el)return;
+ el.scrollIntoView({behavior:"smooth",block:"center"});
+ el.focus();
 }
 function fixStudentIssue(k){const it=studentIssues[k];if(!it)return;const v=document.getElementById("studentFix_"+k)?.value??"";const lines=document.getElementById("studentsInput").value.split(/\r?\n/);lines[it.line]=v;document.getElementById("studentsInput").value=lines.join("\n");saveDraft();parseStudents();}
 function ignoreStudentIssue(k){const it=studentIssues[k];if(!it)return;const lines=document.getElementById("studentsInput").value.split(/\r?\n/);lines[it.line]="";document.getElementById("studentsInput").value=lines.join("\n");saveDraft();parseStudents();}
