@@ -218,7 +218,7 @@ function timeToMin(v,p){
   v=digits(String(v||"")).trim();
   let m=v.match(/^(\d{1,2})(?:\.(\d{1,2}))?$/);
   if(!m)return null;
-  let h=+m[1],mi=m[2]?+m[2]:0;
+  let h=+m[1],mi=m[2]?((m[2]==="5")?30:+m[2]):0;
   let k=meridiemKind(p);
   if(k==="pm"&&h<12)h+=12;
   if(k==="am"&&h===12)h=0;
