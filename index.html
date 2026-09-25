@@ -112,6 +112,7 @@ hr{border:0;border-top:1px solid #eee;margin:15px 0}
 </div>
 
 <div id="results"></div>
+<div id="manualAddStudent"></div>
 
 <div id="teacherFloatingActions">
   <button type="button" id="manageTeacherFloating" onclick="openTeacherManager(); return false;" title="تعديل أو حذف القوالب المحفوظة">⚙️ تعديل / حذف القوالب</button>
@@ -191,6 +192,7 @@ localStorage.setItem(KEY,JSON.stringify(teachers));
 
 let students=[],schedule=[];
 let studentIssues=[],scheduleIssues=[];
+let generatedGroups=[];
 let duplicateGroups=[];
 let studentDuplicateResolutions={};
 let lastInputSnapshot=null;
@@ -827,7 +829,8 @@ if(!students.length)parseStudents();
 if(!schedule.length)parseSchedule();
 if(!students.length)throw new Error("لم يتم إدخال الطالبات.");
 if(!schedule.length)throw new Error("لم يتم إدخال مواعيد المعلمات.");
-let groups=distribute();res.innerHTML="";
+generatedGroups=distribute();
+let groups=generatedGroups;res.innerHTML="";
 const assigned=groups.reduce((a,g)=>a+g.students.length,0);
 if(assigned!==students.length)throw new Error("يوجد طالبات لم يتم توزيعهن بالكامل.");
 if(students.some(s=>s.riwayah==="قالون" && !groups.some(g=>g.students.includes(s))))throw new Error("توجد طالبة قالون لم تحصل على موعد.");
@@ -837,9 +840,40 @@ let out=buildOutput(g),div=document.createElement("div");div.className="result";
 div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*5)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
 res.appendChild(div)
 });
+renderManualAddStudent();
 msg.innerHTML="<p class='success'>✓ تم إنشاء "+groups.length+" قائمة لـ "+students.length+" طالبة.</p>";
 res.scrollIntoView({behavior:"smooth"})
 }catch(e){msg.innerHTML="<p class='error'>❌ "+esc(e.message)+"</p>"}
+}
+function renderGeneratedResults(){
+const res=document.getElementById("results"); if(!res||!generatedGroups.length)return;
+res.innerHTML="";
+generatedGroups.forEach(g=>{
+  const out=buildOutput(g),div=document.createElement("div");div.className="result";
+  div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*5)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
+  res.appendChild(div);
+});
+}
+function renderManualAddStudent(){
+const box=document.getElementById("manualAddStudent"); if(!box)return;
+if(!generatedGroups.length){box.innerHTML="";return;}
+const opts=generatedGroups.map(g=>"<option value='"+esc(g.teacherId)+"'>"+esc(g.teacherName)+"</option>").join("");
+box.innerHTML="<div class='review'><b>➕ إضافة طالبة إلى قائمة معلمة</b><div class='hint'>لو اسم طالبة لم يُضف في القائمة الأصلية أو لم يظهر في القائمة، اكتبي الاسم واختاري المعلمة، وسيتم تحديث القائمة فورًا.</div><div class='buttons' style='margin-top:10px'><input id='manualStudentName' type='text' placeholder='اسم الطالبة'><select id='manualStudentTeacher'><option value=''>— اختاري المعلمة —</option>"+opts+"</select><button type='button' class='green' onclick='addStudentToTeacherList()'>➕ إضافة للقائمة</button></div><div id='manualAddStatus'></div></div>";
+}
+function addStudentToTeacherList(){
+const name=(document.getElementById("manualStudentName")?.value||"").trim();
+const teacherId=document.getElementById("manualStudentTeacher")?.value||"";
+const status=document.getElementById("manualAddStatus");
+if(!name){if(status)status.innerHTML="<p class='error'>❌ اكتبي اسم الطالبة أولًا.</p>";return;}
+if(!teacherId){if(status)status.innerHTML="<p class='error'>❌ اختاري المعلمة أولًا.</p>";return;}
+const group=generatedGroups.find(g=>String(g.teacherId)===String(teacherId));
+if(!group){if(status)status.innerHTML="<p class='error'>❌ لم أجد قائمة المعلمة.</p>";return;}
+const st={name:cleanName(name).trim(),riwayah:"حفص",groupNo:"",id:uid()};
+if(!st.name){if(status)status.innerHTML="<p class='error'>❌ الاسم غير صالح.</p>";return;}
+group.students.push(st);
+renderGeneratedResults();
+renderManualAddStudent();
+if(status){const fresh=document.getElementById("manualAddStatus");if(fresh)fresh.innerHTML="<p class='success'>✓ تمت إضافة "+esc(st.name)+" إلى قائمة "+esc(group.teacherName)+".</p>";}
 }
 async function copyList(btn){
 let text=btn.closest(".result").querySelector("pre").innerText;
