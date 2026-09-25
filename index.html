@@ -430,7 +430,7 @@ let rv=hasQalun(raw)?"قالون":(norm(raw).includes("ورش")?"ورش":"حفص
 
 /* الفواصل التي تدل بوضوح على وجود طالبتين في نفس السطر.
    نغطي رموز القوائم المختلفة مثل 🍒 ✨ 🎀 🩷 ❤️‍🔥 بالإضافة للرموز السابقة. */
-let parts=raw.split(/\s*(?:🤝|❤|❤️|♥|💕|💗|💞|💓|💖|💘|💝|💟|❤️‍🔥|🩷|🍒|✨|🎀|🌿|🪻|🌸|🌷|🌹|🫂|🥀|🌱|🪷|👑|➖|↔|<>|\||\/|\+|←|→)\s*/u).filter(Boolean);
+let parts=raw.split(/\s*(?:🤝|❤|❤️|♥|💕|💗|💞|💓|💖|💘|💝|💟|❤️‍🔥|🩷|🍒|✨|🎀|🌿|🪻|🌸|🌷|🌹|🫂|🥀|🌱|🪷|👑|🍭|➖|↔|<>|\||\/|\+|←|→)\s*/u).filter(Boolean);
 
 /* لو مفيش فاصل واضح، نقبل السطر فقط إذا كان مرقمًا كاسم منفرد */
 if(parts.length===1 && /\s{2,}/.test(raw)){
@@ -460,7 +460,7 @@ let lastNumberedStudent=null,allowContinuation=false,started=false;
 lines.forEach((l,idx)=>{
   const raw=l.trim();
   if(!raw){ lastNumberedStudent=null; allowContinuation=false; return; }
-  const hasNumber=/^\s*[\*🎀👑🌷🪷🌸]*\s*[\(（]?[0-9٠-٩]+\s*[\)）]?\s*(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂\/\\._\-–—*:：]|\s)*/.test(raw) && /^\s*[\*🎀👑🌷🪷🌸]*\s*[\(（]?[0-9٠-٩]+/.test(raw);
+  const hasNumber=/^\s*[\*🎀👑🌷🪷🌸]*\s*[\(（]?[0-9٠-٩]+\s*[\)）\]]?\s*(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂\/\\._\-–—*:：]|\s)*/.test(raw) && /^\s*[\*🎀👑🌷🪷🌸]*\s*[\(（]?[0-9٠-٩]+/.test(raw);
   if(!started && !hasNumber)return;
   if(hasNumber){
     started=true;
