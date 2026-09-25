@@ -191,6 +191,7 @@ localStorage.setItem(KEY,JSON.stringify(teachers));
 
 let students=[],schedule=[];
 let studentIssues=[],scheduleIssues=[];
+let duplicateGroups=[];
 let studentDuplicateResolutions={};
 let lastInputSnapshot=null;
 let teacherTemplatesLocked=localStorage.getItem("quran_teacher_lock_v1")==="1";
@@ -491,7 +492,7 @@ for(const st of students){if(!st.groupNo)continue;if(st.riwayah==="قالون")g
 for(const st of students){if(st.groupNo&&groupRiwayah[st.groupNo])st.riwayah=groupRiwayah[st.groupNo];}
 renderStudents();
 const dupMap={}; students.forEach(s=>{let k=norm(s.name);(dupMap[k]??=[]).push(s)});
-const duplicateGroups=Object.entries(dupMap).filter(([k,a])=>a.length>1).map(([key,a])=>({key,name:a[0].name,count:a.length}));
+duplicateGroups=Object.entries(dupMap).filter(([k,a])=>a.length>1).map(([key,a])=>({key,name:a[0].name,count:a.length}));
 const dups=duplicateGroups.map(a=>a.name);
 const q=students.filter(x=>x.riwayah==="قالون").length,h=students.length-q;
 const groupCount=new Set(students.map(x=>x.groupNo).filter(Boolean)).size;
