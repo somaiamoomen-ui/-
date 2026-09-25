@@ -269,7 +269,20 @@ function extractTimes(text){
   }
 
 const COLONNUM="(\\d{1,2}(?:\\s*[.\\u066b]\\s*(?:00|30|[0-5]?\\d))?)";
-     const colonRange=new RegExp(COLONNUM+"\\s*:\\s*"+COLONNUM+"\\s*("+P+")?","i");
+       const colonHalfRange=/\b(\d{1,2})\s*:\s*(\d{1,2})\s*\.\s*5\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?\b/i;
+  let ch=raw.match(colonHalfRange);
+  if(ch){
+    let suffix=ch[3]||"";
+    let a=timeToMin(ch[1],suffix);
+    let b=timeToMin(ch[2]+".30",suffix);
+    if(a!==null&&b!==null){
+      if(b<=a && suffix && meridiemKind(suffix)==="pm" && +ch[1]<12) a=timeToMin(ch[1],"ص");
+      if(b<=a)b+=1440;
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+const colonRange=new RegExp(COLONNUM+"\\s*:\\s*"+COLONNUM+"\\s*("+P+")?","i");
   let m=raw.match(colonRange);
   if(m){
     let suffix=m[3]||"";
