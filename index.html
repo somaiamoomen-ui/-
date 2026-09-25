@@ -112,6 +112,7 @@ hr{border:0;border-top:1px solid #eee;margin:15px 0}
 </div>
 
 <div id="results"></div>
+<div id="studentSearchPanel"></div>
 <div id="manualAddStudent"></div>
 
 <div id="teacherFloatingActions">
@@ -840,6 +841,7 @@ let out=buildOutput(g),div=document.createElement("div");div.className="result";
 div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*5)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
 res.appendChild(div)
 });
+renderStudentSearch();
 renderManualAddStudent();
 msg.innerHTML="<p class='success'>✓ تم إنشاء "+groups.length+" قائمة لـ "+students.length+" طالبة.</p>";
 res.scrollIntoView({behavior:"smooth"})
@@ -853,6 +855,21 @@ generatedGroups.forEach(g=>{
   div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*5)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
   res.appendChild(div);
 });
+}
+function renderStudentSearch(){
+const box=document.getElementById("studentSearchPanel"); if(!box)return;
+if(!generatedGroups.length){box.innerHTML="";return;}
+box.innerHTML="<div class='review'><b>🔎 البحث عن طالبة في القوائم</b><div class='hint'>اكتبي جزءًا من الاسم للعثور عليها بسرعة.</div><input id='studentSearchInput' type='text' placeholder='اسم الطالبة أو جزء منه' oninput='searchGeneratedStudent()'><div id='studentSearchResults'></div></div>";
+}
+function searchGeneratedStudent(){
+const q=norm(document.getElementById("studentSearchInput")?.value||"").trim();
+const box=document.getElementById("studentSearchResults"); if(!box)return;
+if(!q){box.innerHTML="";return;}
+const found=[];
+generatedGroups.forEach(g=>g.students.forEach((st,index)=>{
+if(norm(st.name).includes(q))found.push({g,st,index});
+}));
+box.innerHTML=found.length?found.map(x=>"<div class='search-result'><b>"+esc(x.st.name)+"</b><div class='hint'>المعلمة: "+esc(x.g.teacherName)+" — "+fmt(x.st.start)+" - "+fmt(x.st.end)+"</div></div>").join(""):"<div class='hint'>لم أجد طالبة بهذا الاسم.</div>";
 }
 function renderManualAddStudent(){
 const box=document.getElementById("manualAddStudent"); if(!box)return;
