@@ -869,8 +869,8 @@ if(!teacherId){if(status)status.innerHTML="<p class='error'>❌ اختاري ا�
 const group=generatedGroups.find(g=>String(g.teacherId)===String(teacherId));
 if(!group){if(status)status.innerHTML="<p class='error'>❌ لم أجد قائمة المعلمة.</p>";return;}
 const cleanStudentName=cleanName(name).trim();
-const lastStudent=group.students.length?group.students[group.students.length-1]:null;
-const start=lastStudent&&Number.isFinite(lastStudent.end)?lastStudent.end:group.start;
+const currentEnd=group.students.reduce((max,st)=>Number.isFinite(st.end)?Math.max(max,st.end):max,group.start);
+const start=currentEnd;
 const st={name:cleanStudentName,riwayah:"حفص",groupNo:"",id:uid(),start:start,end:start+5};
 if(!st.name){if(status)status.innerHTML="<p class='error'>❌ الاسم غير صالح.</p>";return;}
 group.students.push(st);
