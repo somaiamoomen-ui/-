@@ -479,7 +479,7 @@ lines.forEach((l,idx)=>{
     }
     const cleaned=cleanName(raw), words=cleaned.split(/\s+/).filter(Boolean);
     const prose=/حفص|ورش|بارك|القرآن|القران|قلب|ان شاء|إن شاء|الله|تعالى|حبيبات|الأجر|الاجر|اختبار|سورة|سوره|كتب|فضلا|فضلاً|محتاج|معلمات|طالبات|عدد|تبارك|ما شاء|اللهم|وفق|جزاكم|شكرا|شكراً|بالتوفيق|رحال|السعادة|البركة|هنيئ|تشبعت|امتلأت|ازهرت|قائمة|رفيقات/i;
-    const looksLikeName=/^[ء-ي]+(?:\s+[ء-ي]+){1,5}$/.test(cleaned)&&words.length>=2&&words.length<=6&&!prose.test(cleaned);
+    const looksLikeName=/^[ء-ي]+(?:\s+[ء-ي]+){0,5}$/.test(cleaned)&&words.length>=1&&words.length<=6&&!prose.test(cleaned);
     if(looksLikeName){
       const st={name:cleaned,riwayah:hasQalun(raw)?'قالون':'حفص',groupNo:lastNumberedStudent.groupNo,id:uid()};
       students.push(st); lastNumberedStudent=st; allowContinuation=false; return;
