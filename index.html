@@ -249,6 +249,18 @@ function extractTimes(text){
     .replace(/[–—−]/g,"-")
     .trim();
   raw=digits(raw);
+  /* مدى مباشر بالنقطة أو النقطتين: 8.10 / ٨.١٠ / 8..10 / ٨..١٠ */
+  const dotRange=/^\s*(\d{1,2})\s*\.\s*\.?\s*(\d{1,2})\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?\s*$/i;
+  let dr=raw.match(dotRange);
+  if(dr && dr[2]!=="00" && dr[2]!=="30"){
+    let ds=dr[3]||"";
+    let da=timeToMin(dr[1],ds), db=timeToMin(dr[2],ds);
+    if(da!==null&&db!==null){
+      if(db<=da && ds && meridiemKind(ds)==="pm" && +dr[1]<12) da=timeToMin(dr[1],"ص");
+      if(db<=da) db+=1440;
+      return {start:da,end:db,explicit:true};
+    }
+  }
   /* المدى بالنقطة: 8.10 أو ٨.١٠ = من 8 إلى 10، وكذلك 8..10. */
   raw=raw.replace(/(\d{1,2})\s*\.\s*\.\s*(\d{1,2})/g,"$1-$2");
   raw=raw.replace(/\b(\d{1,2})\s*\.\s*(\d{1,2})(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm|$))/gi,(m,a,b)=>((b==="00"||b==="30")?m:(a+"-"+b)));
