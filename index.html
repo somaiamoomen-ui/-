@@ -604,9 +604,28 @@ function ignoreStudentIssue(k){const it=studentIssues[k];if(!it)return;const lin
 function renderScheduleIssues(){
  const box=document.getElementById("scheduleIssues"); if(!box)return;
  if(!scheduleIssues.length){box.innerHTML="";return;}
- box.innerHTML=`<div class="review"><b>⚠️ سطور تحتاج مراجعة</b><div class="hint">يمكنك تصحيح السطر كاملًا، أو لو المشكلة في اسم المعلمة فقط اختاري القالب الصحيح وسيُستبدل الاسم مع الاحتفاظ بباقي السطر.</div>${scheduleIssues.map((it,k)=>{const names=teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("");return `<div class="issue-card"><b>السطر ${it.line+1}</b><div class="issue-line">${esc(it.text)}</div><div class="hint">${esc(it.reason)}</div><label class="hint">اختيار المعلمة الصحيحة (اختياري)</label><select id="scheduleTeacherFix_${k}"><option value="">— اختاري معلمة —</option>${names}</select><input id="scheduleFix_${k}" value="${esc(it.text)}" placeholder="أو اكتبي السطر الصحيح كاملًا"><div class="issue-actions"><button type="button" class="green" onclick="fixScheduleIssue(${k})">✏️ تعديل وإعادة التحليل</button><button type="button" class="gray" onclick="ignoreScheduleIssue(${k})">🗑️ تجاهل السطر</button></div></div>`}).join("")}</div>`;
+ box.innerHTML=`<div class="review"><b>⚠️ سطور تحتاج مراجعة</b><div class="hint">يمكنك تصحيح السطر كاملًا، أو لو المشكلة في اسم المعلمة فقط اختاري القالب الصحيح وسيُستبدل الاسم مع الاحتفاظ بباقي السطر.</div>${scheduleIssues.map((it,k)=>{const names=teachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("");return `<div class="issue-card"><b>السطر ${it.line+1}</b><div class="issue-line">${esc(it.text)}</div><div class="hint">${esc(it.reason)}</div><label class="hint">اختيار المعلمة الصحيحة (اختياري)</label><select id="scheduleTeacherFix_${k}"><option value="">— اختاري معلمة —</option>${names}</select><input id="scheduleFix_${k}" value="${esc(it.text)}" placeholder="أو اكتبي السطر الصحيح كاملًا"><div class="manual-time" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><span class="hint">⏰ أو حددي الوقت يدويًا:</span><input id="scheduleStart_${k}" type="time" title="بداية الموعد"><span>إلى</span><input id="scheduleEnd_${k}" type="time" title="نهاية الموعد"><button type="button" class="green" onclick="fixScheduleIssueWithTime(${k})">⏰ اعتماد الوقت</button></div><div class="issue-actions"><button type="button" class="green" onclick="fixScheduleIssue(${k})">✏️ تعديل وإعادة التحليل</button><button type="button" class="gray" onclick="ignoreScheduleIssue(${k})">🗑️ تجاهل السطر</button></div></div>`}).join("")}</div>`;
 }
 function fixScheduleIssue(k){const it=scheduleIssues[k];if(!it)return;const input=document.getElementById("scheduleFix_"+k),sel=document.getElementById("scheduleTeacherFix_"+k);let v=input?.value??"";const tid=sel?.value||"";if(tid){const t=teachers.find(x=>x.id===tid);if(t){const old=it.text;let replaced=false;for(const cand of teachers){if(old.includes(cand.name)){v=old.replace(cand.name,t.name);replaced=true;break;}}if(!replaced){const m=old.match(/^(\s*[0-9٠-٩]+\s*[-_/.)：:]?\s*)/);v=(m?m[1]:"")+t.name+" "+old.slice(m?m[0].length:0).trim();}}}const lines=document.getElementById("scheduleInput").value.split(/\r?\n/);lines[it.line]=v;document.getElementById("scheduleInput").value=lines.join("\n");saveDraft();parseSchedule();}
+function fixScheduleIssueWithTime(k){
+ const it=scheduleIssues[k]; if(!it)return;
+ const start=document.getElementById("scheduleStart_"+k)?.value||"";
+ const end=document.getElementById("scheduleEnd_"+k)?.value||"";
+ if(!start||!end){alert("حددي وقت البداية ووقت النهاية أولًا.");return;}
+ const tid=document.getElementById("scheduleTeacherFix_"+k)?.value||"";
+ let teacherName="";
+ if(tid){const t=teachers.find(x=>String(x.id)===String(tid));if(t)teacherName=t.name;}
+ if(!teacherName){
+   const t=teacherMatch(it.text);
+   if(t&&!t.ambiguous)teacherName=t.name;
+ }
+ if(!teacherName){alert("اختاري المعلمة الصحيحة أولًا.");return;}
+ const toArabicTime=v=>{const [h,m]=v.split(":").map(Number);return fmt(h*60+m);};
+ const lines=document.getElementById("scheduleInput").value.split(/\r?\n/);
+ lines[it.line]=teacherName+" "+toArabicTime(start)+" - "+toArabicTime(end);
+ document.getElementById("scheduleInput").value=lines.join("\n");
+ saveDraft(); parseSchedule();
+}
 function ignoreScheduleIssue(k){const it=scheduleIssues[k];if(!it)return;const lines=document.getElementById("scheduleInput").value.split(/\r?\n/);lines[it.line]="";document.getElementById("scheduleInput").value=lines.join("\n");saveDraft();parseSchedule();}
 
 function renderQalun(){
