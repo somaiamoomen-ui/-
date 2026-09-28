@@ -601,7 +601,25 @@ for(let i=0;i<lines.length;i++){
   const line=lines[i]; if(!line)continue;
   const emptySlot=/^\s*[\(（]?\s*[0-9٠-٩]+\s*[\)）]?\s*[-_./\\:：]*\s*$/.test(line); if(emptySlot)continue;
   let t=teacherMatch(line), r=null;
-  if(t){ r=extractTeacherTime(line,t.name); if(!r)r=extractTeacherTime(line,(t.name||'').trim().split(/\s+/)[0]); }
+  let consumedNextLine=false;
+  if(t && !t.ambiguous){
+    r=extractTeacherTime(line,t.name);
+    if(!r)r=extractTeacherTime(line,(t.name||'').trim().split(/\s+/)[0]);
+
+    // إذا لم يوجد وقت في نفس السطر، نفحص السطر التالي فقط.
+    // لا نستخدمه إذا كان يحتوي على اسم معلمة أخرى.
+    if(!r && i+1<lines.length){
+      const nextLine=lines[i+1];
+      const nextTeacher=teacherMatch(nextLine);
+      if(!nextTeacher){
+        const nextTime=extractTimes(nextLine);
+        if(nextTime){
+          r=nextTime;
+          consumedNextLine=true;
+        }
+      }
+    }
+  }
   if(!scheduleStarted){ if(!t||!r)continue; scheduleStarted=true; }
   else {
     if(!t){
@@ -612,6 +630,7 @@ for(let i=0;i<lines.length;i++){
   }
   if(t.ambiguous){scheduleIssues.push({line:i,text:lines[i],reason:"اسم المعلمة مطابق لأكثر من قالب."});continue;}
   schedule.push({teacherId:t.id,teacherName:t.name,start:r.start,end:r.end,explicit:r.explicit});
+  if(consumedNextLine) i++;
 }
 for(const s of schedule){let dur=s.end-s.start;if(dur<60){s.end=s.start+60;dur=60;}if(dur>120){s.end=s.start+120;dur=120;}}
 renderQalun();
