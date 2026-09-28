@@ -870,13 +870,7 @@ function finalCheck(){
 function buildReview(groups){
  const panel=document.getElementById("reviewPanel"); if(!panel)return;
  let total=groups.reduce((a,g)=>a+g.students.length,0);
- let broken=[];
- groups.forEach(g=>{
-   const seen={};
-   g.students.forEach(st=>{ if(st.groupNo){ (seen[st.groupNo]??=[]).push(st); } });
-   Object.values(seen).forEach(arr=>{ if(arr.length===1){ const original=students.filter(x=>x.groupNo===arr[0].groupNo); if(original.length>1)broken.push("مجموعة "+arr[0].groupNo+" مع "+g.teacherName); } });
- });
- panel.innerHTML=`<div class="review"><b>📋 مراجعة قبل النسخ</b><div class="stats"><div class="stat"><b>${total}</b>تم توزيعها</div><div class="stat"><b>${groups.length}</b>قائمة</div><div class="stat"><b>${students.filter(x=>x.riwayah==='قالون').length}</b>قالون</div><div class="stat"><b>${broken.length}</b>مجموعات احتاجت فصلًا</div></div><div style="margin-top:10px"><b>سعة كل معلمة:</b>${groups.map(g=>`<div class="capacity-row"><span>${esc(g.teacherName)}</span><span>${g.students.length} / ${g.capacity}</span></div>`).join("")}</div>${broken.length?`<div class="warning"><b>⚠️ ملاحظة:</b><ul class="warning-list">${broken.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:`<div class="success" style="margin-top:10px">✓ المجموعات حافظت على الرفيقات معًا قدر الإمكان.</div>`}</div>`;
+ panel.innerHTML=`<div class="review"><b>📋 مراجعة قبل النسخ</b><div class="stats"><div class="stat"><b>${total}</b>تم توزيعها</div><div class="stat"><b>${groups.length}</b>قائمة</div><div class="stat"><b>${students.filter(x=>x.riwayah==='قالون').length}</b>قالون</div></div><div style="margin-top:10px"><b>سعة كل معلمة:</b>${groups.map(g=>`<div class="capacity-row"><span>${esc(g.teacherName)}</span><span>${g.students.length} / ${g.capacity}</span></div>`).join("")}</div></div>`;
 }
 
 function generateLists(){
