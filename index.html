@@ -103,7 +103,17 @@ hr{border:0;border-top:1px solid #eee;margin:15px 0}
 
 <div class="card" id="guide-generate">
 <h2>⚙️ 5) إنشاء القوائم</h2>
-<p class="small">كل طالبة = 5 دقائق. التوزيع متوازن قدر الإمكان، مع احترام سعة كل معلمة، وطالبات قالون لا تذهب إلا للمعلمات المختارات.</p>
+<p class="small">اختاري مدة اختبار كل طالبة في هذا الاختبار. الافتراضي 5 دقائق، ويمكن اختيار 10 دقائق عند الحاجة.</p>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#faf7fb;border:1px solid #e5dbea;border-radius:12px;padding:10px 12px;margin:10px 0">
+  <b style="color:#71358b">⏱️ وقت كل طالبة:</b>
+  <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+    <input type="radio" name="examDuration" value="5" checked style="width:auto"> 5 دقائق
+  </label>
+  <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+    <input type="radio" name="examDuration" value="10" style="width:auto"> 10 دقائق
+  </label>
+</div>
+<p class="small">التوزيع متوازن قدر الإمكان، مع احترام سعة كل معلمة، وطالبات قالون لا تذهب إلا للمعلمات المختارات.</p>
 <button class="green" onclick="generateLists()">🌷 إنشاء القوائم</button>
 <button class="gray" onclick="finalCheck()">✅ فحص نهائي</button>
 <div id="finalCheckStatus"></div>
@@ -192,6 +202,12 @@ for(const d of INITIAL_TEACHERS){
 localStorage.setItem(KEY,JSON.stringify(teachers));
 
 let students=[],schedule=[];
+let examDuration=5;
+function getExamDuration(){
+  const picked=document.querySelector('input[name="examDuration"]:checked');
+  examDuration=Number(picked?.value||5)===10?10:5;
+  return examDuration;
+}
 let studentIssues=[],scheduleIssues=[];
 let generatedGroups=[];
 let duplicateGroups=[];
@@ -600,7 +616,7 @@ for(let i=0;i<lines.length;i++){
 for(const s of schedule){let dur=s.end-s.start;if(dur<60){s.end=s.start+60;dur=60;}if(dur>120){s.end=s.start+120;dur=120;}}
 renderQalun();
 const uniqueTeachers=new Set(schedule.map(s=>s.teacherId)).size,totalMin=schedule.reduce((a,s)=>a+s.end-s.start,0);
-const st=document.getElementById("scheduleStats"); if(st){st.style.display=schedule.length?"grid":"none";st.innerHTML=`<div class="stat"><b>${schedule.length}</b>موعد</div><div class="stat"><b>${uniqueTeachers}</b>معلمة</div><div class="stat"><b>${Math.floor(totalMin/60)}س ${totalMin%60?totalMin%60+"د":""}</b>إجمالي الوقت</div><div class="stat"><b>${schedule.reduce((a,s)=>a+Math.floor((s.end-s.start)/5),0)}</b>سعة الطالبات</div>`}
+const st=document.getElementById("scheduleStats"); if(st){st.style.display=schedule.length?"grid":"none";st.innerHTML=`<div class="stat"><b>${schedule.length}</b>موعد</div><div class="stat"><b>${uniqueTeachers}</b>معلمة</div><div class="stat"><b>${Math.floor(totalMin/60)}س ${totalMin%60?totalMin%60+"د":""}</b>إجمالي الوقت</div><div class="stat"><b>${schedule.reduce((a,s)=>a+Math.floor((s.end-s.start)/examDuration),0)}</b>سعة الطالبات</div>`}
 renderScheduleIssues();
 if(!schedule.length)setParseStatus("scheduleStatus","bad","❌ لم يتم فصل أي موعد. تأكدي من اسم المعلمة ووجود الوقت في نفس السطر.");
 else if(scheduleIssues.length)setParseStatus("scheduleStatus","warn","⚠️ تم فصل "+schedule.length+" موعد، لكن يوجد "+scheduleIssues.length+" سطر يحتاج مراجعة. يمكنك إصلاحه من أسفل التحليل.");
@@ -755,7 +771,7 @@ function distribute(){
 
   let groups=schedule.map(s=>({
     teacherId:s.teacherId, teacherName:s.teacherName, start:s.start, end:s.end,
-    capacity:Math.floor((s.end-s.start)/5), students:[]
+    capacity:Math.floor((s.end-s.start)/examDuration), students:[]
   })).filter(g=>g.capacity>0);
   if(!groups.length)throw new Error("لا توجد مواعيد صالحة.");
 
@@ -793,7 +809,7 @@ function distribute(){
   groups.forEach(g=>{
     g.students.sort((a,b)=>order.get(a.id)-order.get(b.id));
     let cur=g.start;
-    g.students.forEach(st=>{st.start=cur;st.end=cur+5;cur+=5;});
+    g.students.forEach(st=>{st.start=cur;st.end=cur+examDuration;cur+=examDuration;});
   });
   return groups.filter(g=>g.students.length);
 }
@@ -844,8 +860,8 @@ function finalCheck(){
  try{
   if(!students.length)parseStudents(); if(!schedule.length)parseSchedule();
   if(!students.length||!schedule.length)throw new Error("يجب تحليل الطالبات والمواعيد أولًا.");
-  const q=students.filter(s=>s.riwayah==="قالون"),qids=selectedQalun(),caps=schedule.reduce((a,s)=>a+Math.floor((s.end-s.start)/5),0);
-  const missingQ=q.length&&!qids.length, qcap=q.length?schedule.filter(s=>qids.includes(s.teacherId)).reduce((a,s)=>a+Math.floor((s.end-s.start)/5),0):0;
+  const q=students.filter(s=>s.riwayah==="قالون"),qids=selectedQalun(),caps=schedule.reduce((a,s)=>a+Math.floor((s.end-s.start)/examDuration),0);
+  const missingQ=q.length&&!qids.length, qcap=q.length?schedule.filter(s=>qids.includes(s.teacherId)).reduce((a,s)=>a+Math.floor((s.end-s.start)/examDuration),0):0;
   const dupMap={};students.forEach(s=>(dupMap[norm(s.name)]??=[]).push(s)); const dups=Object.values(dupMap).filter(a=>a.length>1);
   let issues=[]; if(students.length>caps)issues.push("سعة المواعيد أقل من عدد الطالبات"); if(missingQ)issues.push("توجد طالبات قالون ولم تختاري معلمة قالون"); if(q.length&&qcap<q.length)issues.push("سعة معلمات قالون لا تكفي عدد طالبات قالون");
   box.innerHTML=issues.length?`<div class="status warn">⚠️ الفحص النهائي يحتاج مراجعة: ${issues.join(" — ")}${dups.length?" — توجد أسماء مكررة أيضًا":""}</div>`:`<div class="status ok">✓ الفحص النهائي سليم: ${students.length} طالبة، ${caps} خانة متاحة، وكل طالبات قالون يمكن توزيعهن على المعلمات المختارات.${dups.length?" مع وجود أسماء مكررة تحتاج مراجعة.":""}</div>`;
@@ -865,6 +881,7 @@ function buildReview(groups){
 
 function generateLists(){
 rememberInputs();
+getExamDuration();
 let msg=document.getElementById("message"),res=document.getElementById("results");
 try{
 if(!students.length)parseStudents();
@@ -879,7 +896,7 @@ if(students.some(s=>s.riwayah==="قالون" && !groups.some(g=>g.students.inclu
 buildReview(groups);
 groups.forEach(g=>{
 let out=buildOutput(g),div=document.createElement("div");div.className="result";
-div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*5)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
+div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*examDuration)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
 res.appendChild(div)
 });
 renderStudentSearch();
@@ -893,7 +910,7 @@ const res=document.getElementById("results"); if(!res||!generatedGroups.length)r
 res.innerHTML="";
 generatedGroups.forEach(g=>{
   const out=buildOutput(g),div=document.createElement("div");div.className="result";
-  div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*5)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
+  div.innerHTML="<h3>🌷 "+esc(g.teacherName)+"</h3><div class='small'>"+fmt(g.start)+" - "+fmt(g.start+g.students.length*examDuration)+" | "+g.students.length+" طالبة</div><div class='buttons'><button class='green' onclick='copyList(this)'>📋 نسخ القائمة</button></div><pre>"+esc(out)+"</pre>";
   res.appendChild(div);
 });
 }
@@ -929,7 +946,7 @@ if(!group){if(status)status.innerHTML="<p class='error'>❌ لم أجد قائم
 const cleanStudentName=cleanName(name).trim();
 const currentEnd=group.students.reduce((max,st)=>Number.isFinite(st.end)?Math.max(max,st.end):max,group.start);
 const start=currentEnd;
-const st={name:cleanStudentName,riwayah:"حفص",groupNo:"",id:uid(),start:start,end:start+5};
+const st={name:cleanStudentName,riwayah:"حفص",groupNo:"",id:uid(),start:start,end:start+examDuration};
 if(!st.name){if(status)status.innerHTML="<p class='error'>❌ الاسم غير صالح.</p>";return;}
 group.students.push(st);
 renderGeneratedResults();
