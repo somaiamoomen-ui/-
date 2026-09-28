@@ -748,7 +748,9 @@ function distribute(){
   const qids=selectedQalun();
   const total=students.length;
   if(!schedule.length)throw new Error("لا توجد مواعيد صالحة.");
-  const qCount=students.filter(s=>s.riwayah==="قالون").length;
+  const qStudents=students.filter(s=>s.riwayah==="قالون");
+  const hStudents=students.filter(s=>s.riwayah!=="قالون");
+  const qCount=qStudents.length;
   if(qCount && !qids.length)throw new Error("يوجد طالبات قالون، اختاري معلمة أو أكثر لقالون.");
 
   let groups=schedule.map(s=>({
@@ -756,47 +758,35 @@ function distribute(){
     capacity:Math.floor((s.end-s.start)/5), students:[]
   })).filter(g=>g.capacity>0);
   if(!groups.length)throw new Error("لا توجد مواعيد صالحة.");
+
   const cap=groups.reduce((a,g)=>a+g.capacity,0);
   if(total>cap)throw new Error("إجمالي وقت المعلمات لا يكفي عدد الطالبات. المطلوب "+total+" والموجود "+cap+".");
 
-  /* الأولوية الأولى: تساوي العدد بين القوائم قدر الإمكان.
-     إذا كان 81 طالبة و9 معلمات => 9 لكل معلمة.
-     إذا لم ينقسم العدد بالتساوي، الفرق بين أي قائمتين لا يزيد عن طالبة واحدة. */
-  const n=groups.length, base=Math.floor(total/n), rem=total%n;
-  const targets=groups.map((g,i)=>base+(i<rem?1:0));
+  const qGroups=groups.filter(g=>qids.includes(g.teacherId));
+  const qCap=qGroups.reduce((a,g)=>a+g.capacity,0);
+  if(qCount>qCap)throw new Error("لا يمكن توزيع كل طالبات قالون على المعلمات المختارات. سعة معلمات قالون "+qCap+" طالبة، والمطلوب "+qCount+".");
 
-  /* نختار الطالبات بالترتيب الأصلي، مع احترام قالون.
-     كل معلمة تأخذ عددها المستهدف بالضبط إن كانت السعة تسمح. */
-  const remaining=students.slice();
-  const takeNext=(g,target)=>{
-    while(g.students.length<target){
-      const isQTeacher=qids.includes(g.teacherId);
-      /* معلمة قالون: نعطي قالون أولوية داخل حصتها حتى لا تتعطل السعة لاحقًا.
-         باقي المعلمات: تأخذ أول طالبة متاحة بالترتيب الأصلي. */
-      let idx=-1;
-      if(isQTeacher) idx=remaining.findIndex(st=>st.riwayah==="قالون");
-      if(idx<0) idx=remaining.findIndex(st=>st.riwayah!=="قالون" || isQTeacher);
-      if(idx<0)throw new Error("لا يمكن تحقيق التوزيع المطلوب مع قيد طالبات قالون. زيدي معلمات قالون المختارات أو عدلي المواعيد.");
-      const st=remaining.splice(idx,1)[0];
-      g.students.push(st);
-    }
-  };
-  for(let i=0;i<groups.length;i++){
-    const target=Math.min(targets[i],groups[i].capacity);
-    takeNext(groups[i],target);
-  }
-
-  /* لو السعات غير متساوية وجعلت الأهداف غير ممكنة، وزعي الباقي على أقل القوائم
-     مع الحفاظ على فرق لا يتجاوز الإمكانات الفعلية للسعة. */
-  while(remaining.length){
-    let candidates=groups.filter(g=>g.students.length<g.capacity && (remaining.some(st=>st.riwayah!=="قالون") || qids.includes(g.teacherId)));
-    if(!candidates.length)throw new Error("لم يمكن توزيع كل الطالبات بسبب سعة المواعيد أو قيد قالون.");
+  /*
+   * قاعدة التوزيع:
+   * 1) قالون أولًا: كل طالبة قالون تذهب فقط لمعلمة مختارة لقالون،
+   *    ويتم توزيع طالبات قالون بالتساوي قدر الإمكان بين المعلمات المختارات.
+   * 2) بعد تثبيت قالون، يتم توزيع باقي الطالبات على أقل القوائم عددًا،
+   *    مع احترام سعة كل معلمة. بذلك يظل التوزيع متوازنًا قدر الإمكان
+   *    دون أن نُخرج أي طالبة قالون إلى معلمة غير مختارة.
+   */
+  qStudents.forEach(st=>{
+    const candidates=qGroups.filter(g=>g.students.length<g.capacity);
+    if(!candidates.length)throw new Error("لا يمكن تحقيق التوزيع المطلوب مع قيد طالبات قالون. سعة معلمات قالون غير كافية.");
     candidates.sort((a,b)=>a.students.length-b.students.length);
-    const g=candidates[0];
-    const idx=remaining.findIndex(st=>st.riwayah!=="قالون" || qids.includes(g.teacherId));
-    if(idx<0)throw new Error("تبقت طالبات قالون ولا توجد سعة في معلمات قالون المختارات.");
-    g.students.push(remaining.splice(idx,1)[0]);
-  }
+    candidates[0].students.push(st);
+  });
+
+  hStudents.forEach(st=>{
+    const candidates=groups.filter(g=>g.students.length<g.capacity);
+    if(!candidates.length)throw new Error("لم يمكن توزيع كل الطالبات بسبب سعة المواعيد.");
+    candidates.sort((a,b)=>a.students.length-b.students.length);
+    candidates[0].students.push(st);
+  });
 
   /* ترتيب كل قائمة يظل حسب ترتيب قائمة الأسماء الأصلية. */
   const order=new Map(students.map((s,i)=>[s.id,i]));
