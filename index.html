@@ -803,25 +803,20 @@ function distribute(){
 
   /*
    * قاعدة التوزيع:
-   * 1) قالون أولًا: كل طالبة قالون تذهب فقط لمعلمة مختارة لقالون،
-   *    ويتم توزيع طالبات قالون بالتساوي قدر الإمكان بين المعلمات المختارات.
-   * 2) بعد تثبيت قالون، يتم توزيع باقي الطالبات على أقل القوائم عددًا،
-   *    مع احترام سعة كل معلمة. بذلك يظل التوزيع متوازنًا قدر الإمكان
-   *    دون أن نُخرج أي طالبة قالون إلى معلمة غير مختارة.
+   * نمشي على الطالبات بنفس ترتيب قائمة الإدخال.
+   * كل معلمة تأخذ الطالبات المتتاليات حتى تمتلئ سعتها،
+   * ثم ننتقل للمعلمة التالية.
+   * طالبات قالون فقط تذهب إلى المعلمات المختارات لقالون.
    */
-  qStudents.forEach(st=>{
-    const candidates=qGroups.filter(g=>g.students.length<g.capacity);
-    if(!candidates.length)throw new Error("لا يمكن تحقيق التوزيع المطلوب مع قيد طالبات قالون. سعة معلمات قالون غير كافية.");
-    candidates.sort((a,b)=>a.students.length-b.students.length);
+  for(const st of students){
+    const candidates=(st.riwayah==="قالون"?qGroups:groups)
+      .filter(g=>g.students.length<g.capacity);
+    if(!candidates.length){
+      if(st.riwayah==="قالون")throw new Error("لا يمكن توزيع كل طالبات قالون على المعلمات المختارات بسبب السعة.");
+      throw new Error("لم يمكن توزيع كل الطالبات بسبب سعة المواعيد.");
+    }
     candidates[0].students.push(st);
-  });
-
-  hStudents.forEach(st=>{
-    const candidates=groups.filter(g=>g.students.length<g.capacity);
-    if(!candidates.length)throw new Error("لم يمكن توزيع كل الطالبات بسبب سعة المواعيد.");
-    candidates.sort((a,b)=>a.students.length-b.students.length);
-    candidates[0].students.push(st);
-  });
+  }
 
   /* ترتيب كل قائمة يظل حسب ترتيب قائمة الأسماء الأصلية. */
   const order=new Map(students.map((s,i)=>[s.id,i]));
