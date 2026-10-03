@@ -842,8 +842,10 @@ function distribute(){
   let pos=0;
   for(let gi=0;gi<normalGroups.length;gi++){
     const g=normalGroups[gi];
-    while(g.students.length<targets[gi]&&pos<normalStudents.length){
+    let normalAssigned=0;
+    while(normalAssigned<targets[gi]&&pos<normalStudents.length){
       g.students.push(normalStudents[pos++]);
+      normalAssigned++;
     }
   }
 
