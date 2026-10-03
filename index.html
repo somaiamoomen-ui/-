@@ -789,16 +789,14 @@ function distribute(){
   let groups=schedule.map(s=>({teacherId:s.teacherId,teacherName:s.teacherName,start:s.start,end:s.end,capacity:Math.floor((s.end-s.start)/examDuration),students:[]})).filter(g=>g.capacity>0);
   if(!groups.length)throw new Error("لا توجد مواعيد صالحة.");
 
-  const normalGroups=groups.filter(g=>!qids.includes(g.teacherId));
   const qGroups=groups.filter(g=>qids.includes(g.teacherId));
-  const normalCap=normalGroups.reduce((a,g)=>a+g.capacity,0);
-  if(normalStudents.length>normalCap)throw new Error("إجمالي وقت المعلمات العاديات لا يكفي عدد الطالبات.");
-  const qCap=qGroups.reduce((a,g)=>a+g.capacity,0);
 
   /*
-   * قالون مسار مستقل:
-   * طالبات قالون لا يدخلن في حساب تقسيم الطالبات العاديات.
-   * إذا لم تكفِ سعة معلمات قالون، نسمح بمد وقت معلمة قالون فقط.
+   * معلمات قالون:
+   * كل طالبات قالون يذهبن للمعلمات المختارات لقالون أولًا.
+   * وبعد وضع طالبات قالون، أي سعة متبقية عند نفس المعلمة
+   * تُستخدم لطالبات الحفظ العاديات.
+   * وإذا لم تكفِ سعة معلمات قالون، نسمح بالتمديد لهن فقط.
    */
   if(qStudents.length){
     let remaining=qStudents.length;
@@ -820,13 +818,21 @@ function distribute(){
   }
 
   /*
+   * بعد حجز طالبات قالون، كل المعلمات — بما فيهن معلمات قالون —
+   * يدخلن في توزيع طالبات الحفظ حسب السعة المتبقية.
+   */
+  const normalGroups=groups.filter(g=>g.capacity>g.students.length);
+  const normalCap=normalGroups.reduce((a,g)=>a+(g.capacity-g.students.length),0);
+  if(normalStudents.length>normalCap)throw new Error("إجمالي وقت المعلمات العاديات لا يكفي عدد الطالبات.");
+
+  /*
    * الطالبات العاديات: حساب توزيع متوازن أولًا، ثم توزيع متسلسل.
    * كل معلمة تأخذ مجموعة متتالية من قائمة الطالبات العاديات.
    */
   const targets=normalGroups.map(()=>0);
   let remaining=normalStudents.length;
   while(remaining){
-    const active=normalGroups.map((g,i)=>i).filter(i=>targets[i]<normalGroups[i].capacity);
+    const active=normalGroups.map((g,i)=>i).filter(i=>targets[i]<(normalGroups[i].capacity-normalGroups[i].students.length));
     if(!active.length)throw new Error("لم يمكن توزيع كل الطالبات بسبب سعة المواعيد.");
     const min=Math.min(...active.map(i=>targets[i]));
     active.filter(i=>targets[i]===min).forEach(i=>{if(remaining){targets[i]++;remaining--;}});
