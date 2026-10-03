@@ -821,9 +821,10 @@ function distribute(){
    * بعد حجز طالبات قالون، كل المعلمات — بما فيهن معلمات قالون —
    * يدخلن في توزيع طالبات الحفظ حسب السعة المتبقية.
    */
+  // السعة المتبقية بعد حجز طالبات قالون، مع احتساب أي وقت متبقٍ لمعلمة قالون للحفظ.
   const normalGroups=groups.filter(g=>g.capacity>g.students.length);
-  const normalCap=normalGroups.reduce((a,g)=>a+(g.capacity-g.students.length),0);
-  if(normalStudents.length>normalCap)throw new Error("إجمالي وقت المعلمات العاديات لا يكفي عدد الطالبات.");
+  const normalCap=normalGroups.reduce((a,g)=>a+Math.max(0,g.capacity-g.students.length),0);
+  if(normalStudents.length>normalCap)throw new Error("إجمالي وقت المعلمات لا يكفي عدد طالبات الحفظ المتبقية.");
 
   /*
    * الطالبات العاديات: حساب توزيع متوازن أولًا، ثم توزيع متسلسل.
