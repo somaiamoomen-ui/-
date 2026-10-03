@@ -782,38 +782,71 @@ let t=teachers.find(x=>x.id===id);if(t&&confirm("هل تريدين حذف "+t.na
 function distribute(){
   const qids=selectedQalun(),total=students.length;
   if(!schedule.length)throw new Error("لا توجد مواعيد صالحة.");
-  const qCount=students.filter(s=>s.riwayah==="قالون").length;
-  if(qCount&&!qids.length)throw new Error("يوجد طالبات قالون، اختاري معلمة أو أكثر لقالون.");
+  const qStudents=students.filter(s=>s.riwayah==="قالون");
+  const normalStudents=students.filter(s=>s.riwayah!=="قالون");
+  if(qStudents.length&&!qids.length)throw new Error("يوجد طالبات قالون، اختاري معلمة أو أكثر لقالون.");
+
   let groups=schedule.map(s=>({teacherId:s.teacherId,teacherName:s.teacherName,start:s.start,end:s.end,capacity:Math.floor((s.end-s.start)/examDuration),students:[]})).filter(g=>g.capacity>0);
   if(!groups.length)throw new Error("لا توجد مواعيد صالحة.");
-  const cap=groups.reduce((a,g)=>a+g.capacity,0);
-  if(total>cap)throw new Error("إجمالي وقت المعلمات لا يكفي عدد الطالبات. المطلوب "+total+" والموجود "+cap+".");
+
+  const normalGroups=groups.filter(g=>!qids.includes(g.teacherId));
   const qGroups=groups.filter(g=>qids.includes(g.teacherId));
+  const normalCap=normalGroups.reduce((a,g)=>a+g.capacity,0);
+  if(normalStudents.length>normalCap)throw new Error("إجمالي وقت المعلمات العاديات لا يكفي عدد الطالبات.");
   const qCap=qGroups.reduce((a,g)=>a+g.capacity,0);
-  if(qCount>qCap)throw new Error("لا يمكن توزيع كل طالبات قالون على المعلمات المختارات. سعة معلمات قالون "+qCap+" طالبة، والمطلوب "+qCount+".");
-  const targets=groups.map(()=>0); let remaining=total;
+
+  /*
+   * قالون مسار مستقل:
+   * طالبات قالون لا يدخلن في حساب تقسيم الطالبات العاديات.
+   * إذا لم تكفِ سعة معلمات قالون، نسمح بمد وقت معلمة قالون فقط.
+   */
+  if(qStudents.length){
+    let remaining=qStudents.length;
+    let qi=0;
+    while(remaining>0){
+      if(!qGroups.length)throw new Error("لا توجد معلمة مختارة لطالبات قالون.");
+      const g=qGroups[qi%qGroups.length];
+      g.students.push(qStudents[qStudents.length-remaining]);
+      remaining--;
+      qi++;
+    }
+    qGroups.forEach(g=>{
+      if(g.students.length>g.capacity){
+        const extra=g.students.length-g.capacity;
+        g.end=g.start+(g.capacity+extra)*examDuration;
+        g.capacity=g.capacity+extra;
+      }
+    });
+  }
+
+  /*
+   * الطالبات العاديات: حساب توزيع متوازن أولًا، ثم توزيع متسلسل.
+   * كل معلمة تأخذ مجموعة متتالية من قائمة الطالبات العاديات.
+   */
+  const targets=normalGroups.map(()=>0);
+  let remaining=normalStudents.length;
   while(remaining){
-    const active=groups.map((g,i)=>i).filter(i=>targets[i]<groups[i].capacity);
+    const active=normalGroups.map((g,i)=>i).filter(i=>targets[i]<normalGroups[i].capacity);
     if(!active.length)throw new Error("لم يمكن توزيع كل الطالبات بسبب سعة المواعيد.");
     const min=Math.min(...active.map(i=>targets[i]));
     active.filter(i=>targets[i]===min).forEach(i=>{if(remaining){targets[i]++;remaining--;}});
   }
+
   let pos=0;
-  for(let gi=0;gi<groups.length;gi++){
-    const g=groups[gi];
-    while(g.students.length<targets[gi]&&pos<students.length){
-      const st=students[pos];
-      if(st.riwayah==="قالون"&&!qids.includes(g.teacherId)){
-        const qi=groups.findIndex((x,i)=>i>gi&&qids.includes(x.teacherId)&&x.students.length<targets[i]);
-        if(qi<0)throw new Error("تعذر توزيع طالبة قالون مع الحفاظ على ترتيب الطالبات وسعات المعلمات.");
-        groups[qi].students.push(st); pos++; continue;
-      }
-      g.students.push(st); pos++;
+  for(let gi=0;gi<normalGroups.length;gi++){
+    const g=normalGroups[gi];
+    while(g.students.length<targets[gi]&&pos<normalStudents.length){
+      g.students.push(normalStudents[pos++]);
     }
   }
-  if(pos<students.length)throw new Error("لم يتم توزيع كل الطالبات.");
+
   const order=new Map(students.map((s,i)=>[s.id,i]));
-  groups.forEach(g=>{g.students.sort((a,b)=>order.get(a.id)-order.get(b.id));let cur=g.start;g.students.forEach(st=>{st.start=cur;st.end=cur+examDuration;cur+=examDuration;});});
+  groups.forEach(g=>{
+    g.students.sort((a,b)=>order.get(a.id)-order.get(b.id));
+    let cur=g.start;
+    g.students.forEach(st=>{st.start=cur;st.end=cur+examDuration;cur+=examDuration;});
+    if(g.students.length>g.capacity)g.end=cur;
+  });
   return groups.filter(g=>g.students.length);
 }
 function buildOutput(g){
