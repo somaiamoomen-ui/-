@@ -186,6 +186,19 @@ const INITIAL_TEACHERS=[
 ];
 
 const KEY="quran_academy_teachers_v3";
+
+const SHARED_TEACHERS_URL="https://zntvhzhmtfsjnqonnnbr.supabase.co/rest/v1/teacher_templates";
+const SHARED_TEACHERS_KEY="sb_publishable_rdGucjo0L5kIvLBLnyi7OQ_maFoTTA-";
+async function readSharedTeacherTemplates(){
+  const res=await fetch(SHARED_TEACHERS_URL+"?select=*&order=sort_order.asc,name.asc",{
+    headers:{
+      "apikey":SHARED_TEACHERS_KEY,
+      "Authorization":"Bearer "+SHARED_TEACHERS_KEY
+    }
+  });
+  if(!res.ok)throw new Error("تعذر قراءة قائمة المعلمات المشتركة");
+  return await res.json();
+}
 function uid(){return "id_"+Date.now()+"_"+Math.random().toString(36).slice(2)}
 function norm(s){
 return String(s||"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
