@@ -214,8 +214,11 @@ async function saveTeacherToCloud(t){
 }
 
 async function addTeacherToCloud(t){
-  const payload={id:t.id,name:t.name,phone:t.phone||"",telegram:t.telegram||"",messenger:t.messenger||"",whatsapp:t.whatsapp||"",sort_order:teachers.findIndex(x=>x.id===t.id)+1};
-  await cloudRequest("",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify(payload)});
+  const payload={name:t.name,phone:t.phone||"",telegram:t.telegram||"",messenger:t.messenger||"",whatsapp:t.whatsapp||"",sort_order:teachers.findIndex(x=>x.id===t.id)+1};
+  const res=await cloudRequest("",{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify(payload)});
+  const rows=await res.json();
+  if(!Array.isArray(rows)||!rows[0]?.id)throw new Error("تعذر حفظ المعلمة الجديدة.");
+  t.id=rows[0].id;
 }
 
 async function deleteTeacherFromCloud(id){
