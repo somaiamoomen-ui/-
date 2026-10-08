@@ -155,6 +155,74 @@ hr{border:0;border-top:1px solid #eee;margin:15px 0}
 </div>
 
 <script>
+const SUPABASE_URL="https://zntvhzhmtfsjnqonnnbr.supabase.co";
+const SUPABASE_KEY="sb_publishable_rdGucjo0L5kIvLBLnyi7OQ_maFoTTA-";
+const SUPABASE_TABLE=SUPABASE_URL+"/rest/v1/teacher_templates";
+
+async function cloudRequest(path="",options={}){
+  const headers=Object.assign({"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json"},options.headers||{});
+  const res=await fetch(SUPABASE_TABLE+path,Object.assign({},options,{headers}));
+  if(!res.ok) throw new Error("تعذر الاتصال بقائمة المعلمات المشتركة.");
+  return res;
+}
+
+async function loadSharedTeachers(){
+  try{
+    const res=await cloudRequest("?select=*&order=sort_order.asc,name.asc");
+    const rows=await res.json();
+    if(!Array.isArray(rows)||!rows.length) return false;
+    const merged=rows.map(row=>{
+      const base=INITIAL_TEACHERS.find(t=>norm(t.name)===norm(row.name))||{};
+      return {
+        id:row.id,
+        name:row.name||"",
+        phone:row.phone||base.phone||"",
+        telegram:row.telegram||base.telegram||"",
+        messenger:row.messenger||base.messenger||"",
+        whatsapp:row.whatsapp||base.whatsapp||"",
+        notes:row.notes||base.notes||""
+      };
+    });
+    teachers=merged;
+    localStorage.setItem(KEY,JSON.stringify(teachers));
+    for(const row of rows){
+      const base=INITIAL_TEACHERS.find(t=>norm(t.name)===norm(row.name));
+      if(base && (row.phone||row.telegram||row.messenger||row.whatsapp)===undefined) continue;
+      const patch={};
+      if(base){
+        if(!row.phone&&base.phone)patch.phone=base.phone;
+        if(!row.telegram&&base.telegram)patch.telegram=base.telegram;
+        if(!row.messenger&&base.messenger)patch.messenger=base.messenger;
+        if(!row.whatsapp&&base.whatsapp)patch.whatsapp=base.whatsapp;
+        if(!row.notes&&base.notes)patch.notes=base.notes;
+      }
+      if(Object.keys(patch).length){
+        try{await cloudRequest("?id=eq."+encodeURIComponent(row.id),{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify(patch)})}catch(e){}
+      }
+    }
+    renderTeachers();
+    updateTeacherLockUI();
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function saveTeacherToCloud(t){
+  const payload={name:t.name,phone:t.phone||"",telegram:t.telegram||"",messenger:t.messenger||"",whatsapp:t.whatsapp||"",sort_order:teachers.findIndex(x=>x.id===t.id)+1};
+  await cloudRequest("?id=eq."+encodeURIComponent(t.id),{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify(payload)});
+}
+
+async function addTeacherToCloud(t){
+  const payload={id:t.id,name:t.name,phone:t.phone||"",telegram:t.telegram||"",messenger:t.messenger||"",whatsapp:t.whatsapp||"",sort_order:teachers.findIndex(x=>x.id===t.id)+1};
+  await cloudRequest("",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify(payload)});
+}
+
+async function deleteTeacherFromCloud(id){
+  await cloudRequest("?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{"Prefer":"return=minimal"}});
+}
+
+<script>
 const INITIAL_TEACHERS=[
 {name:"منى محمد",phone:"01125615651",telegram:"https://t.me/Monaabdelmaogod",messenger:"https://www.facebook.com/share/1CmCocPoua/",whatsapp:"https://api.whatsapp.com/send?phone=+201125615651"},
 {name:"نسرين يسرى",phone:"+20101116009476",telegram:"https://t.me/Nesreenyosry",messenger:"https://www.facebook.com/share/17qnaWXk48/",whatsapp:"https://api.whatsapp.com/send?phone=+201116009476"},
@@ -200,6 +268,7 @@ for(const d of INITIAL_TEACHERS){
  if(!teachers.some(t=>norm(t.name)===norm(d.name)))teachers.push({id:uid(),...d});
 }
 localStorage.setItem(KEY,JSON.stringify(teachers));
+let sharedTeachersReady=loadSharedTeachers();
 
 let students=[],schedule=[];
 let examDuration=5;
@@ -767,16 +836,37 @@ document.getElementById("tNotes").value=t.notes||"";
 document.getElementById("modal").classList.remove("hidden")
 }
 function closeTeacher(){document.getElementById("modal").classList.add("hidden")}
-function saveTeacher(){
+async function saveTeacher(){
+await sharedTeachersReady;
 let id=document.getElementById("editId").value,name=document.getElementById("tName").value.trim();
 if(!name){alert("اكتبي اسم المعلمة.");return}
 let o={id:id||uid(),name,phone:document.getElementById("tPhone").value.trim(),telegram:document.getElementById("tTelegram").value.trim(),messenger:document.getElementById("tMessenger").value.trim(),whatsapp:document.getElementById("tWhatsapp").value.trim(),notes:document.getElementById("tNotes").value.trim()};
-if(id){let i=teachers.findIndex(x=>x.id===id);if(i>=0)teachers[i]=o}else teachers.push(o);
-save();closeTeacher();renderTeachers()
+try{
+ if(id){
+   let i=teachers.findIndex(x=>x.id===id);if(i>=0)teachers[i]=o;else throw new Error("لم أجد قالب المعلمة.");
+   await saveTeacherToCloud(o);
+ }else{
+   teachers.push(o);
+   await addTeacherToCloud(o);
+ }
+ save();closeTeacher();renderTeachers();
+}catch(e){
+ if(!id)teachers=teachers.filter(x=>x.id!==o.id);else{const old=teachers.find(x=>x.id===o.id);if(old)Object.assign(old,o)}
+ save();renderTeachers();
+ alert("لم يتم حفظ التعديل في القائمة المشتركة. تأكدي من الاتصال بالإنترنت وحاولي مرة أخرى.");
 }
-function deleteTeacher(id){
+}
+async function deleteTeacher(id){
 if(teacherTemplatesLocked){alert("قوالب المعلمات مقفلة حاليًا.");return;}
-let t=teachers.find(x=>x.id===id);if(t&&confirm("هل تريدين حذف "+t.name+"؟")){teachers=teachers.filter(x=>x.id!==id);save();renderTeachers()}
+let t=teachers.find(x=>x.id===id);
+if(t&&confirm("هل تريدين حذف "+t.name+"؟")){
+ try{
+   await sharedTeachersReady;
+   await deleteTeacherFromCloud(id);
+   teachers=teachers.filter(x=>x.id!==id);
+   save();renderTeachers();
+ }catch(e){alert("لم يتم حذف المعلمة من القائمة المشتركة. تأكدي من الاتصال بالإنترنت وحاولي مرة أخرى.");}
+}
 }
 
 function distribute(){
@@ -1000,6 +1090,7 @@ let old=btn.innerText;btn.innerText="✓ تم النسخ";setTimeout(()=>btn.inn
 renderTeachers();
 updateTeacherLockUI();
 setupAutosave();
+sharedTeachersReady.then(()=>{renderTeachers();updateTeacherLockUI()});
 </script>
 </body>
 </html>
