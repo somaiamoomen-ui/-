@@ -213,9 +213,10 @@ async function askTemplatePassword(){
   const p=prompt("أدخلي كلمة سر إدارة قوالب المعلمات:");
   if(p===null)return false;
   if(!p){alert("لا يمكن تعديل القوالب بدون كلمة السر.");return false;}
+  const normalizedPassword=p.replace(/[٠-٩]/g,d=>String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
   try{
-    await sharedRequest("POST",{action:"verify",password:p});
-    managerPassword=p;
+    await sharedRequest("POST",{action:"verify",password:normalizedPassword});
+    managerPassword=normalizedPassword;
     return true;
   }catch(e){
     managerPassword="";
