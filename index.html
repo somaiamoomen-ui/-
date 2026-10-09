@@ -761,7 +761,7 @@ function updateTeacherLockUI(){
  const b=document.getElementById("lockTeachersBtn"), add=document.getElementById("addTeacherBtn"), st=document.getElementById("teacherLockStatus");
  if(b)b.innerText=teacherTemplatesLocked?"🔓 فتح تعديل القوالب":"🔒 قفل قوالب المعلمات";
  if(add){add.disabled=false;add.classList.remove("locked");}
- if(st)st.innerText=teacherTemplatesLocked?"🔒 القوالب مقفلة للحماية من التعديل أو الحذف بالخطأ.":"القوالب مفتوحة للتعديل.";
+ if(st)st.innerText="🔐 يلزم إدخال كلمة السر عند إضافة أو تعديل أو حذف أي قالب.";
  searchTeachers();
 }
 function toggleTeacherLock(){
@@ -785,12 +785,14 @@ function renderTeacherManager(){
   box.innerHTML=found.length?found.map(t=>`<div class="search-result" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(t.name)}</b><div class="buttons"><button type="button" class="gray" onclick="editTeacher('${t.id}')">✏️ تعديل</button><button type="button" class="red" onclick="deleteTeacher('${t.id}')">🗑️ حذف</button></div></div>`).join(""):"<div class='hint'>لا توجد قوالب مطابقة.</div>";
 }
 async function openTeacher(){
+await refreshSharedTeachers();
 if(!await askTemplatePassword())return;
 document.getElementById("modalTitle").innerText="➕ إضافة معلمة جديدة";
 ["editId","tName","tPhone","tTelegram","tMessenger","tWhatsapp","tNotes"].forEach(id=>document.getElementById(id).value="");
 document.getElementById("modal").classList.remove("hidden")
 }
 async function editTeacher(id){
+await refreshSharedTeachers();
 if(!await askTemplatePassword())return;
 let t=teachers.find(x=>x.id===id);if(!t){managerPassword="";return;}
 document.getElementById("modalTitle").innerText="✏️ تعديل قالب المعلمة";
@@ -814,6 +816,7 @@ try{
 }catch(e){managerPassword="";alert(e.message||"تعذر حفظ القالب.");}
 }
 async function deleteTeacher(id){
+await refreshSharedTeachers();
 let t=teachers.find(x=>x.id===id);if(!t)return;
 if(!await askTemplatePassword())return;
 if(confirm("هل تريدين حذف "+t.name+"؟")){
