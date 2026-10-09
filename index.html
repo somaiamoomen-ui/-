@@ -209,6 +209,7 @@ async function refreshSharedTeachers(){
   }catch(e){console.warn("تعذر تحديث القوالب المشتركة؛ سيستمر الموقع بالبيانات المحفوظة محليًا.",e)}
 }
 async function askTemplatePassword(){
+  if(managerPassword)return true;
   const p=prompt("أدخلي كلمة سر إدارة قوالب المعلمات:");
   if(p===null)return false;
   if(!p){alert("لا يمكن تعديل القوالب بدون كلمة السر.");return false;}
@@ -228,8 +229,7 @@ async function writeSharedTemplate(action,rowOrId){
   const payload={action,password};
   if(action==="delete")payload.id=String(rowOrId);
   else payload.row=rowOrId;
-  try{return await sharedRequest("POST",payload)}
-  finally{managerPassword=""}
+  return await sharedRequest("POST",payload)
 }
 function uid(){return "id_"+Date.now()+"_"+Math.random().toString(36).slice(2)}
 function norm(s){
@@ -780,11 +780,16 @@ function renderTeachers(){
   /* القوالب لا تُعرض في الصفحة الرئيسية؛ تظهر داخل نافذة الإدارة فقط. */
   if(document.getElementById("teacherManagerModal") && !document.getElementById("teacherManagerModal").classList.contains("hidden")) renderTeacherManager();
 }
-function openTeacherManager(){
+async function openTeacherManager(){
+  if(!await askTemplatePassword())return;
+  await refreshSharedTeachers();
   document.getElementById("teacherManagerModal").classList.remove("hidden");
   renderTeacherManager();
 }
-function closeTeacherManager(){document.getElementById("teacherManagerModal").classList.add("hidden")}
+function closeTeacherManager(){
+  document.getElementById("teacherManagerModal").classList.add("hidden");
+  managerPassword="";
+}
 function renderTeacherManager(){
   const box=document.getElementById("teacherManagerList"); if(!box)return;
   const q=norm(document.getElementById("teacherManagerSearch")?.value||"");
@@ -800,8 +805,8 @@ document.getElementById("modal").classList.remove("hidden")
 }
 async function editTeacher(id){
 await refreshSharedTeachers();
-if(!await askTemplatePassword())return;
-let t=teachers.find(x=>x.id===id);if(!t){managerPassword="";return;}
+if(!managerPassword){if(!await askTemplatePassword())return;}
+let t=teachers.find(x=>x.id===id);if(!t)return;
 document.getElementById("modalTitle").innerText="✏️ تعديل قالب المعلمة";
 document.getElementById("editId").value=id;
 document.getElementById("tName").value=t.name||"";
@@ -825,7 +830,7 @@ try{
 async function deleteTeacher(id){
 await refreshSharedTeachers();
 let t=teachers.find(x=>x.id===id);if(!t)return;
-if(!await askTemplatePassword())return;
+if(!managerPassword){if(!await askTemplatePassword())return;}
 if(confirm("هل تريدين حذف "+t.name+"؟")){
   try{await writeSharedTemplate("delete",id);await refreshSharedTeachers();renderTeachers();}
   catch(e){managerPassword="";alert(e.message||"تعذر حذف القالب.");}
