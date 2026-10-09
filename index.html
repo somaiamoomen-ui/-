@@ -834,7 +834,7 @@ if(!managerPassword){if(!await askTemplatePassword())return;}
 if(confirm("هل تريدين حذف "+t.name+"؟")){
   try{await writeSharedTemplate("delete",id);await refreshSharedTeachers();renderTeachers();}
   catch(e){managerPassword="";alert(e.message||"تعذر حذف القالب.");}
-}else{managerPassword="";}
+}
 }
 
 function distribute(){
