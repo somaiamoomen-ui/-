@@ -133,8 +133,7 @@ hr{border:0;border-top:1px solid #eee;margin:15px 0}
 <div id="teacherManagerModal" class="modal hidden">
   <div class="modal-box" style="max-width:620px">
     <div class="modal-head"><h3>⚙️ إدارة قوالب المعلمات</h3><button type="button" class="gray" onclick="closeTeacherManager()">✕</button></div>
-    <p class="hint">من هنا يمكنك تعديل أو حذف أي قالب محفوظ. إذا كان القفل مفعّلًا، اضغطي زر فتح التعديل أولًا.</p>
-    <div class="buttons" style="margin-bottom:10px"><button type="button" id="managerLockBtn" class="gray" onclick="toggleTeacherLock(); renderTeacherManager();">🔓 فتح تعديل القوالب</button></div>
+    <p class="hint">يمكنك استخدام القوالب بشكل عادي. عند إضافة أو تعديل أو حذف أي قالب، سيُطلب إدخال كلمة السر أولًا.</p>
     <input id="teacherManagerSearch" type="text" placeholder="🔎 البحث عن معلمة..." oninput="renderTeacherManager()">
     <div id="teacherManagerList" style="max-height:55vh;overflow:auto;margin-top:10px"></div>
   </div>
@@ -187,17 +186,43 @@ const INITIAL_TEACHERS=[
 
 const KEY="quran_academy_teachers_v3";
 
-const SHARED_TEACHERS_URL="https://zntvhzhmtfsjnqonnnbr.supabase.co/rest/v1/teacher_templates";
+const SHARED_TEACHERS_URL="https://zntvhzhmtfsjnqonnnbr.supabase.co/functions/v1/teacher-templates";
 const SHARED_TEACHERS_KEY="sb_publishable_rdGucjo0L5kIvLBLnyi7OQ_maFoTTA-";
-async function readSharedTeacherTemplates(){
-  const res=await fetch(SHARED_TEACHERS_URL+"?select=*&order=sort_order.asc,name.asc",{
-    headers:{
-      "apikey":SHARED_TEACHERS_KEY,
-      "Authorization":"Bearer "+SHARED_TEACHERS_KEY
-    }
-  });
-  if(!res.ok)throw new Error("تعذر قراءة قائمة المعلمات المشتركة");
-  return await res.json();
+let managerPassword="";
+async function sharedRequest(method="GET",payload=null){
+  const options={method,headers:{"Content-Type":"application/json","apikey":SHARED_TEACHERS_KEY,"Authorization":"Bearer "+SHARED_TEACHERS_KEY}};
+  if(payload)options.body=JSON.stringify(payload);
+  const res=await fetch(SHARED_TEACHERS_URL,options);
+  const data=await res.json().catch(()=>null);
+  if(!res.ok)throw new Error(data?.error||"تعذر الاتصال بقوالب المعلمات المشتركة.");
+  return data;
+}
+async function readSharedTeacherTemplates(){return await sharedRequest("GET")}
+async function refreshSharedTeachers(){
+  try{
+    const rows=await readSharedTeacherTemplates();
+    if(!Array.isArray(rows)||!rows.length)return;
+    const oldByName=new Map(teachers.map(t=>[norm(t.name),t]));
+    teachers=rows.map(r=>({...r,id:String(r.id),notes:oldByName.get(norm(r.name))?.notes||""}));
+    save();renderTeachers();updateTeacherLockUI();
+    if((document.getElementById("scheduleInput")?.value||"").trim())parseSchedule();
+  }catch(e){console.warn("تعذر تحديث القوالب المشتركة؛ سيستمر الموقع بالبيانات المحفوظة محليًا.",e)}
+}
+async function askTemplatePassword(){
+  const p=prompt("أدخلي كلمة سر إدارة قوالب المعلمات:");
+  if(p===null)return false;
+  if(!p){alert("لا يمكن تعديل القوالب بدون كلمة السر.");return false;}
+  managerPassword=p;
+  return true;
+}
+async function writeSharedTemplate(action,rowOrId){
+  const password=managerPassword;
+  if(!password)throw new Error("أدخلي كلمة السر أولًا.");
+  const payload={action,password};
+  if(action==="delete")payload.id=String(rowOrId);
+  else payload.row=rowOrId;
+  try{return await sharedRequest("POST",payload)}
+  finally{managerPassword=""}
 }
 function uid(){return "id_"+Date.now()+"_"+Math.random().toString(36).slice(2)}
 function norm(s){
@@ -226,7 +251,7 @@ let generatedGroups=[];
 let duplicateGroups=[];
 let studentDuplicateResolutions={};
 let lastInputSnapshot=null;
-let teacherTemplatesLocked=localStorage.getItem("quran_teacher_lock_v1")==="1";
+let teacherTemplatesLocked=true;
 const DRAFT_KEY="quran_exam_drafts_v1";
 function saveDraft(){try{localStorage.setItem(DRAFT_KEY,JSON.stringify({students:document.getElementById("studentsInput")?.value||"",schedule:document.getElementById("scheduleInput")?.value||""}))}catch(e){}}
 function loadDraft(){try{let d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null");if(d){document.getElementById("studentsInput").value=d.students||"";document.getElementById("scheduleInput").value=d.schedule||"";}}catch(e){}}
@@ -736,7 +761,7 @@ function updateTeacherLockUI(){
  const b=document.getElementById("lockTeachersBtn"), add=document.getElementById("addTeacherBtn"), st=document.getElementById("teacherLockStatus");
  if(b)b.innerText=teacherTemplatesLocked?"🔓 فتح تعديل القوالب":"🔒 قفل قوالب المعلمات";
  if(add){add.disabled=false;add.classList.remove("locked");}
- if(st)st.innerText=teacherTemplatesLocked?"🔒 القوالب مقفلة للحماية من التعديل أو الحذف بالخطأ.":"القوالب مفتوحة للتعديل.";
+ if(st)st.innerText="🔐 يلزم إدخال كلمة السر عند إضافة أو تعديل أو حذف أي قالب.";
  searchTeachers();
 }
 function toggleTeacherLock(){
@@ -757,18 +782,19 @@ function renderTeacherManager(){
   const box=document.getElementById("teacherManagerList"); if(!box)return;
   const q=norm(document.getElementById("teacherManagerSearch")?.value||"");
   const found=teachers.filter(t=>!q||norm(t.name).includes(q));
-  const lockBtn=document.getElementById("managerLockBtn");
-  if(lockBtn) lockBtn.innerText=teacherTemplatesLocked?"🔓 فتح تعديل القوالب":"🔒 قفل التعديل والحذف";
-  box.innerHTML=found.length?found.map(t=>`<div class="search-result" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(t.name)}</b><div class="buttons"><button type="button" class="gray" ${teacherTemplatesLocked?'disabled':''} onclick="editTeacher('${t.id}')">✏️ تعديل</button><button type="button" class="red" ${teacherTemplatesLocked?'disabled':''} onclick="deleteTeacher('${t.id}')">🗑️ حذف</button></div></div>`).join(""):"<div class='hint'>لا توجد قوالب مطابقة.</div>";
+  box.innerHTML=found.length?found.map(t=>`<div class="search-result" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(t.name)}</b><div class="buttons"><button type="button" class="gray" onclick="editTeacher('${t.id}')">✏️ تعديل</button><button type="button" class="red" onclick="deleteTeacher('${t.id}')">🗑️ حذف</button></div></div>`).join(""):"<div class='hint'>لا توجد قوالب مطابقة.</div>";
 }
-function openTeacher(){
+async function openTeacher(){
+await refreshSharedTeachers();
+if(!await askTemplatePassword())return;
 document.getElementById("modalTitle").innerText="➕ إضافة معلمة جديدة";
 ["editId","tName","tPhone","tTelegram","tMessenger","tWhatsapp","tNotes"].forEach(id=>document.getElementById(id).value="");
 document.getElementById("modal").classList.remove("hidden")
 }
-function editTeacher(id){
-if(teacherTemplatesLocked){alert("قوالب المعلمات مقفلة حاليًا.");return;}
-let t=teachers.find(x=>x.id===id);if(!t)return;
+async function editTeacher(id){
+await refreshSharedTeachers();
+if(!await askTemplatePassword())return;
+let t=teachers.find(x=>x.id===id);if(!t){managerPassword="";return;}
 document.getElementById("modalTitle").innerText="✏️ تعديل قالب المعلمة";
 document.getElementById("editId").value=id;
 document.getElementById("tName").value=t.name||"";
@@ -780,16 +806,23 @@ document.getElementById("tNotes").value=t.notes||"";
 document.getElementById("modal").classList.remove("hidden")
 }
 function closeTeacher(){document.getElementById("modal").classList.add("hidden")}
-function saveTeacher(){
+async function saveTeacher(){
 let id=document.getElementById("editId").value,name=document.getElementById("tName").value.trim();
-if(!name){alert("اكتبي اسم المعلمة.");return}
-let o={id:id||uid(),name,phone:document.getElementById("tPhone").value.trim(),telegram:document.getElementById("tTelegram").value.trim(),messenger:document.getElementById("tMessenger").value.trim(),whatsapp:document.getElementById("tWhatsapp").value.trim(),notes:document.getElementById("tNotes").value.trim()};
-if(id){let i=teachers.findIndex(x=>x.id===id);if(i>=0)teachers[i]=o}else teachers.push(o);
-save();closeTeacher();renderTeachers()
+if(!name){alert("اكتبي اسم المعلمة.");managerPassword="";return}
+const o={id:id||undefined,name,phone:document.getElementById("tPhone").value.trim(),telegram:document.getElementById("tTelegram").value.trim(),messenger:document.getElementById("tMessenger").value.trim(),whatsapp:document.getElementById("tWhatsapp").value.trim(),notes:document.getElementById("tNotes").value.trim()};
+try{
+  await writeSharedTemplate(id?"update":"add",o);
+  await refreshSharedTeachers();closeTeacher();renderTeachers();
+}catch(e){managerPassword="";alert(e.message||"تعذر حفظ القالب.");}
 }
-function deleteTeacher(id){
-if(teacherTemplatesLocked){alert("قوالب المعلمات مقفلة حاليًا.");return;}
-let t=teachers.find(x=>x.id===id);if(t&&confirm("هل تريدين حذف "+t.name+"؟")){teachers=teachers.filter(x=>x.id!==id);save();renderTeachers()}
+async function deleteTeacher(id){
+await refreshSharedTeachers();
+let t=teachers.find(x=>x.id===id);if(!t)return;
+if(!await askTemplatePassword())return;
+if(confirm("هل تريدين حذف "+t.name+"؟")){
+  try{await writeSharedTemplate("delete",id);await refreshSharedTeachers();renderTeachers();}
+  catch(e){managerPassword="";alert(e.message||"تعذر حذف القالب.");}
+}else{managerPassword="";}
 }
 
 function distribute(){
@@ -1013,6 +1046,7 @@ let old=btn.innerText;btn.innerText="✓ تم النسخ";setTimeout(()=>btn.inn
 renderTeachers();
 updateTeacherLockUI();
 setupAutosave();
+refreshSharedTeachers();
 </script>
 </body>
 </html>
