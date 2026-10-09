@@ -201,7 +201,7 @@ async function readSharedTeacherTemplates(){return await sharedRequest("GET")}
 async function refreshSharedTeachers(){
   try{
     const rows=await readSharedTeacherTemplates();
-    if(!Array.isArray(rows)||!rows.length)return;
+    if(!Array.isArray(rows))return;
     const oldByName=new Map(teachers.map(t=>[norm(t.name),t]));
     teachers=rows.map(r=>({...r,id:String(r.id),notes:oldByName.get(norm(r.name))?.notes||""}));
     save();renderTeachers();updateTeacherLockUI();
@@ -212,8 +212,15 @@ async function askTemplatePassword(){
   const p=prompt("أدخلي كلمة سر إدارة قوالب المعلمات:");
   if(p===null)return false;
   if(!p){alert("لا يمكن تعديل القوالب بدون كلمة السر.");return false;}
-  managerPassword=p;
-  return true;
+  try{
+    await sharedRequest("POST",{action:"verify",password:p});
+    managerPassword=p;
+    return true;
+  }catch(e){
+    managerPassword="";
+    alert("كلمة السر غير صحيحة، لا يمكن تغيير القوالب.");
+    return false;
+  }
 }
 async function writeSharedTemplate(action,rowOrId){
   const password=managerPassword;
