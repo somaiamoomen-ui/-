@@ -234,7 +234,7 @@ async function writeSharedTemplate(action,rowOrId){
 }
 function uid(){return "id_"+Date.now()+"_"+Math.random().toString(36).slice(2)}
 function norm(s){
-return String(s||"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
+return String(s||"").normalize("NFKC").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
 .replace(/[ًٌٍَُِّْـ]/g,"").replace(/\s+/g," ").trim().toLowerCase()
 }
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
@@ -502,7 +502,7 @@ function cleanName(s){
 /* أسماء الطالبات لا تحمل أرقام القائمة الأصلية نهائيًا.
    نحذف الأرقام العربية/الإنجليزية في أي مكان داخل الاسم،
    وكذلك الأقواس والنجوم التي كانت تلتصق برقم القائمة. */
-return removeEmojisAndDecorations(String(s)
+return removeEmojisAndDecorations(String(s).normalize("NFKC")
 .replace(/[0-9٠-٩]+/g," ")
 .replace(/[()（）*«»\[\]{}]+/g," ")
 .replace(/(قالون|حفص)/gi," ")
