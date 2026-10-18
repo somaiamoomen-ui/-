@@ -445,6 +445,23 @@ let tn=norm(t.name);
 if(n.includes(tn))exact.push(t);
 }
 if(exact.length)return exact[0];
+
+/* Match a shortened teacher name when two or more leading name words uniquely identify a saved template.
+   Example: "فاطمة محمد" should match "فاطمة محمد علي", but remain ambiguous if another template shares that prefix. */
+let prefixMatches=[], longestPrefix=1;
+for(const t of teachers){
+  const parts=norm(t.name).split(" ").filter(Boolean);
+  for(let count=2;count<=parts.length;count++){
+    const prefix=parts.slice(0,count).join(" ");
+    if(n.includes(prefix)){
+      if(count>longestPrefix){longestPrefix=count;prefixMatches=[t];}
+      else if(count===longestPrefix && !prefixMatches.some(x=>x.id===t.id))prefixMatches.push(t);
+    }
+  }
+}
+if(prefixMatches.length===1)return prefixMatches[0];
+if(prefixMatches.length>1)return {ambiguous:true,names:prefixMatches.map(x=>x.name)};
+
 let candidates=[];
 for(const t of teachers){
 let first=norm(t.name).split(" ")[0];
